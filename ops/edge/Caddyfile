@@ -1,19 +1,15 @@
-# DevOps Hub edge (Caddy)
-# Host :80 / :443 — єдина публічна HTTP(S) точка.
-# OnCall на хості лишається :85 (HTTPS); з edge також /oncall/* → oncall_nginx_5:80 (opsnet).
-
 {$OPS_HOST:s.ks.tv} {
 	encode gzip
-
+	handle /.well-known/acme-challenge/* {
+		root * /var/www/certbot
+		file_server
+	}
 	handle_path /radar/* {
 		reverse_proxy ops_radar:80
 	}
-
-	# OnCall через edge (внутрішній HTTP контейнера, без host :80)
 	handle_path /oncall/* {
 		reverse_proxy oncall_nginx_5:80
 	}
-
 	handle {
 		reverse_proxy ops_hub:80
 	}

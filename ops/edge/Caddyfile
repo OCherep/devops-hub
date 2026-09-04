@@ -1,0 +1,40 @@
+# DevOps Hub edge
+# OnCall stays on host :85 (not routed here).
+#
+# Production (DNS → this host):
+#   replace s.ks.tv with your hostname for automatic HTTPS.
+#
+# Local / no DNS: use the :80 block only (comment out the named host block).
+
+s.ks.tv {
+	encode gzip
+
+	# Tech Radar under /radar/
+	handle_path /radar/* {
+		reverse_proxy ops_radar:80
+	}
+
+	# Future modules (examples — uncomment when service is up):
+	# handle_path /catalog/* {
+	# 	reverse_proxy ops_service_catalog:80
+	# }
+	# handle_path /runbooks/* {
+	# 	reverse_proxy ops_runbooks:80
+	# }
+
+	# Hub portal (default)
+	handle {
+		reverse_proxy ops_hub:80
+	}
+}
+
+# Fallback HTTP-only (IP access / lab). Safe alongside named host if needed.
+:80 {
+	encode gzip
+	handle_path /radar/* {
+		reverse_proxy ops_radar:80
+	}
+	handle {
+		reverse_proxy ops_hub:80
+	}
+}

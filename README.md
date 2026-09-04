@@ -1,53 +1,64 @@
 # DevOps Hub
 
-**Єдина перша сторінка** для інструментів DevOps / SRE навколо KSTV (VidMind) і міжкомандної роботи.
+**Єдина перша сторінка** інструментів DevOps / SRE (KSTV · VidMind) + **теплий Docker-only деплой** на EC2.
 
 | | |
 |---|---|
-| **Live (після Pages)** | `https://ocherep.github.io/devops-hub/` |
-| **Каталог** | [`tools.json`](./tools.json) |
-| **Owner** | platform / SRE |
+| **Portal** | `index.html` + [`tools.json`](./tools.json) |
+| **Ops layout** | [`ops/`](./ops/) → `/opt/ops` на інстансі |
+| **OnCall** | окремо, **host port 85** (без змін) |
+| **Edge** | Caddy `:80/:443` → Hub + `/radar/` |
 
-## Навіщо
-
-Замість розкиданих репо й закладок — один портал:
-
-1. **[OnCall System](https://github.com/OCherep/oncall-system)** — чергування, звернення, дейлі
-2. **[KSTV Tech Radar](https://github.com/OCherep/kstv-tech_radar)** — tech portfolio, ArchUnit, DORA
-3. **Planned** — runbooks, service catalog, DORA dashboard, …
-
-Нові ідеї додаються записом у `tools.json` без переписування HTML.
-
-## Швидкий старт
+## Портал
 
 ```bash
-git clone https://github.com/OCherep/devops-hub.git
-cd devops-hub
-# локально: будь-який static server
 python3 -m http.server 8080
-# → http://localhost:8080
+# http://localhost:8080
 ```
 
-### GitHub Pages
+Або GitHub Pages / edge на EC2.
 
-Settings → Pages → Source: **Deploy from a branch** → `main` / `/ (root)`.
+## Теплий деплой (Docker only)
 
-## Як додати інструмент
+На хості потрібні лише **Docker** і **Compose plugin**.
 
-1. Створи/підготуй репозиторій.
-2. Додай об’єкт у `tools.json` (`status`: `active` | `beta` | `planned`).
-3. У README того репо — рядок: *Part of [DevOps Hub](https://github.com/OCherep/devops-hub)*.
-4. (Опційно) PR у цей репо.
+```text
+/opt/ops/
+  edge/     # :80/:443
+  hub/      # this repo
+  radar/    # tech radar
+  oncall/   # :85
+  _template/
+  modules.env
+  up.sh down.sh network.sh bootstrap.sh add-module.sh
+```
 
-## Узгодження з існуючими проєктами
+```bash
+sudo mkdir -p /opt/ops && sudo chown "$USER:$USER" /opt/ops
+git clone https://github.com/OCherep/devops-hub.git /opt/ops/hub
+/opt/ops/hub/ops/bootstrap.sh /opt/ops
+/opt/ops/network.sh
+/opt/ops/up.sh
+```
 
-| Проєкт | Гілка / стан | Роль у Hub |
-|--------|--------------|------------|
-| [oncall-system](https://github.com/OCherep/oncall-system/tree/grok-1.0.0) | `grok-1.0.0` | Операційна робота з командою |
-| [kstv-tech_radar](https://github.com/OCherep/kstv-tech_radar/tree/grok-0.0.1) | `grok-0.0.1` | Технологічні рішення платформи |
+Повний гід: **[ops/DEPLOY.md](./ops/DEPLOY.md)**.
 
-Разом: **хто на зміні / що ламається** (OnCall) + **який стек дозволений** (Radar).
+### Новий сервіс
 
-## Ліцензія
+```bash
+/opt/ops/add-module.sh my-tool
+# edit compose + edge snippet + tools.json
+/opt/ops/up.sh my-tool edge
+```
 
-Внутрішній tooling; за потреби додай LICENSE.
+## Активні інструменти
+
+| Інструмент | Repo | Live (ціль) |
+|------------|------|-------------|
+| OnCall System | [oncall-system](https://github.com/OCherep/oncall-system) | `https://s.ks.tv:85/` |
+| KSTV Tech Radar | [kstv-tech_radar](https://github.com/OCherep/kstv-tech_radar) | `https://s.ks.tv/radar/` |
+| DevOps Hub | this | `https://s.ks.tv/` |
+
+## Узгодження
+
+Кожен модуль у README: *Part of [DevOps Hub](https://github.com/OCherep/devops-hub)*.

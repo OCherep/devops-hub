@@ -1,0 +1,15 @@
+# Copied to /opt/ops/radar/docker-compose.yml by bootstrap if missing.
+services:
+  radar:
+    image: nginx:alpine
+    container_name: ops_radar
+    restart: always
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+      - ./ops-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - opsnet
+
+networks:
+  opsnet:
+    external: true

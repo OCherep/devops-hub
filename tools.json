@@ -1,58 +1,81 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "updated": "2026-09-04",
   "owner": "platform / SRE",
+  "deploy": {
+    "layout": "/opt/ops",
+    "network": "opsnet",
+    "edge": ":80/:443",
+    "oncall_port": 85,
+    "docs": "ops/DEPLOY.md"
+  },
   "tools": [
     {
       "id": "oncall-system",
       "title": "OnCall System",
       "status": "active",
-      "blurb": "Чергування, відсутності, звернення (інциденти) і дейлі-задачі для DevOps/SRE. Календар, адмінка, Slack/Telegram/Jira hooks.",
+      "blurb": "Чергування, відсутності, звернення і дейлі-задачі. Docker-only. Host port 85.",
       "repo": "https://github.com/OCherep/oncall-system",
       "branch": "https://github.com/OCherep/oncall-system/tree/grok-1.0.0",
-      "live": null,
+      "live": "https://s.ks.tv:85/",
       "docs": "https://github.com/OCherep/oncall-system/blob/grok-1.0.0/docs/API.md",
+      "ops_dir": "/opt/ops/oncall",
       "tags": ["ops", "sre", "on-call", "incidents", "go"]
     },
     {
       "id": "kstv-tech-radar",
       "title": "KSTV Tech Radar",
       "status": "beta",
-      "blurb": "Tech portfolio платформи: ADOPT / TRIAL / ASSESS / HOLD. ArchUnit, DORA, Jira proposals, зв’язок з міграцією мікросервісів.",
+      "blurb": "Tech portfolio: ADOPT / TRIAL / ASSESS / HOLD. ArchUnit, DORA, Jira proposals.",
       "repo": "https://github.com/OCherep/kstv-tech_radar",
       "branch": "https://github.com/OCherep/kstv-tech_radar/tree/grok-0.0.1",
-      "live": null,
+      "live": "https://s.ks.tv/radar/",
       "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/METRICS.md",
+      "ops_dir": "/opt/ops/radar",
       "tags": ["architecture", "radar", "governance", "java"]
+    },
+    {
+      "id": "devops-hub",
+      "title": "DevOps Hub",
+      "status": "active",
+      "blurb": "Єдина перша сторінка + warm deploy layout (/opt/ops, opsnet, edge).",
+      "repo": "https://github.com/OCherep/devops-hub",
+      "live": "https://s.ks.tv/",
+      "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/DEPLOY.md",
+      "ops_dir": "/opt/ops/hub",
+      "tags": ["portal", "ops"]
     },
     {
       "id": "runbooks-portal",
       "title": "Runbooks Portal",
       "status": "planned",
-      "blurb": "Єдиний каталог runbook’ів для інцидентів і routine ops (пізніше — зв’язок з OnCall incidents).",
+      "blurb": "Каталог runbook’ів; модуль через /opt/ops/_template → add-module.sh.",
       "repo": null,
       "live": null,
-      "docs": null,
+      "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/_template/README.md",
+      "ops_dir": "/opt/ops/runbooks",
       "tags": ["ops", "docs"]
     },
     {
       "id": "service-catalog",
       "title": "Service Catalog",
       "status": "planned",
-      "blurb": "Каталог сервісів VidMind/KSTV: owners, SLO, репо, deploy path — міст між Tech Radar і OnCall.",
+      "blurb": "Реєстр сервісів VidMind/KSTV: owners, tier, repo — міст Radar ↔ OnCall.",
       "repo": null,
       "live": null,
       "docs": null,
+      "ops_dir": "/opt/ops/service-catalog",
       "tags": ["catalog", "ownership"]
     },
     {
       "id": "dora-dashboard",
       "title": "DORA Dashboard",
       "status": "planned",
-      "blurb": "DF / lead time / CFR / recovery по ключових сервісах (див. kstv-tech_radar docs/DORA.md).",
+      "blurb": "DF / lead time / CFR / recovery. Див. kstv-tech_radar docs/DORA.md.",
       "repo": null,
       "live": null,
       "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/DORA.md",
+      "ops_dir": "/opt/ops/dora-dashboard",
       "tags": ["metrics", "delivery"]
     }
   ]

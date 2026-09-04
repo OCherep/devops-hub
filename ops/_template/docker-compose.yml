@@ -1,0 +1,24 @@
+# Template module: __MODULE_ID__
+# One service = one directory under /opt/ops/__MODULE_ID__
+# Only Docker on the host. Join external network opsnet.
+
+services:
+  app:
+    # Option A — static site
+    image: nginx:alpine
+    container_name: ops___MODULE_ID__
+    restart: always
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+    # Option B — build your app instead:
+    # build: .
+    # environment:
+    #   - PORT=8080
+    networks:
+      - opsnet
+    # Do NOT publish host ports unless this is a special case like oncall:85.
+    # Expose via edge/Caddyfile path or subdomain.
+
+networks:
+  opsnet:
+    external: true

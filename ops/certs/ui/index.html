@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Certificates SSL/TLS</title>
+<style>
+  :root { --bg:#0b1220; --card:#121a2b; --line:#1e2a40; --txt:#e8eef8; --muted:#8b9bb4; --ok:#34d399; --warn:#fbbf24; --bad:#f87171; }
+  * { box-sizing:border-box }
+  body { margin:0; font-family:ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--txt); }
+  header { padding:20px 28px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+  header a { color:#93c5fd; text-decoration:none }
+  h1 { margin:0; font-size:20px }
+  main { padding:24px 28px; max-width:1100px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; font-size:14px }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line) }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase }
+  .st { font-weight:600 }
+  .ok { color:var(--ok) } .expiring { color:var(--warn) } .expired { color:var(--bad) } .unknown { color:var(--muted) }
+  .muted { color:var(--muted); font-size:13px }
+  button { background:#2563eb; color:#fff; border:0; border-radius:8px; padding:8px 12px; cursor:pointer }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Certificates SSL/TLS</h1>
+    <div class="muted">Інвентар + статус. Дані: status.json або API Postgres.</div>
+  </div>
+  <a href="/">← DevOps Hub</a>
+</header>
+<main>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="muted" id="meta">Завантаження…</div>
+      <button type="button" onclick="load()">Оновити</button>
+    </div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Статус</th><th>Днів</th><th>Імʼя</th><th>Issuer</th><th>Джерело</th><th>notAfter</th></tr></thead>
+      <tbody id="tb"><tr><td colspan="6">—</td></tr></tbody>
+    </table>
+  </div>
+  <div class="card muted">
+    Оновлення: <code>/opt/ops/certs/inventory.sh</code> пише <code>status.json</code>.
+    Postgres: схема <code>certs.inventory</code> (ops_postgres). OnCall поки на SQLite.
+  </div>
+</main>
+<script>
+async function load(){
+  const tb=document.getElementById('tb');
+  const meta=document.getElementById('meta');
+  try{
+    const r=await fetch('status.json',{cache:'no-store'});
+    if(!r.ok) throw new Error('status.json HTTP '+r.status);
+    const rows=await r.json();
+    const list=Array.isArray(rows)?rows:[];
+    meta.textContent = list.length ? ('Сертифікатів: '+list.length) : 'Порожньо — запустіть inventory.sh';
+    tb.innerHTML = list.length ? list.sort((a,b)=>(a.days_left??9999)-(b.days_left??9999)).map(x=>
+      `<tr>
+        <td class="st ${x.status||''}">${x.status||'—'}</td>
+        <td>${x.days_left??'—'}</td>
+        <td>${esc(x.name)}</td>
+        <td>${esc(x.issuer)}</td>
+        <td>${esc(x.source)}</td>
+        <td>${esc(x.not_after)}</td>
+      </tr>`).join('') : '<tr><td colspan="6">Немає даних</td></tr>';
+  }catch(e){
+    meta.textContent = String(e.message||e);
+    tb.innerHTML = '<tr><td colspan="6">Немає status.json. На хості: sudo /opt/ops/certs/inventory.sh</td></tr>';
+  }
+}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+load();
+</script>
+</body>
+</html>

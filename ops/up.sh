@@ -8,6 +8,21 @@ cd "$ROOT"
 
 "$ROOT/network.sh"
 
+port_in_use() {
+  local p="$1"
+  if command -v ss >/dev/null 2>&1; then
+    ss -lnt | grep -qE ":${p}\\s"
+  else
+    return 1
+  fi
+}
+
+who_on_port() {
+  local p="$1"
+  docker ps --format '{{.Names}}\t{{.Ports}}' 2>/dev/null | grep -E ":${p}->|:${p}\\b" || true
+  ss -lntp 2>/dev/null | grep -E ":${p}\\s" || true
+}
+
 start_one() {
   local id="$1"
   local dir="$ROOT/$id"
@@ -20,6 +35,18 @@ start_one() {
     echo "SKIP $id — no $compose"
     return 0
   fi
+
+  # Edge needs host :80 and :443 free of other containers
+  if [[ "$id" == "edge" ]]; then
+    if port_in_use 80; then
+      echo "ERROR: host port 80 is already in use — edge (Caddy) cannot bind."
+      echo "       OnCall must NOT publish 80:80 (only 85:443). Free :80 first:"
+      who_on_port 80
+      echo "       Hint: docker ps | grep 80  &&  docker stop <old_nginx>"
+      return 1
+    fi
+  fi
+
   echo "==> up $id"
   (cd "$dir" && docker compose -f "$compose" up -d --remove-orphans)
 }

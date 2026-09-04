@@ -1,0 +1,35 @@
+# Certs module — ZeroSSL ACME renew + hooks for other issuers (future: ACM)
+# Deploy as /opt/ops/certs
+services:
+  certs:
+    image: certbot/certbot:latest
+    container_name: ops_certs
+    entrypoint: /bin/sh
+    command: /work/renew-loop.sh
+    environment:
+      - DOMAIN=${DOMAIN:-s.ks.tv}
+      - EMAIL=${CERT_EMAIL:-ops@s.ks.tv}
+      - ZEROSSL_EAB_KID=${ZEROSSL_EAB_KID:-}
+      - ZEROSSL_EAB_HMAC=${ZEROSSL_EAB_HMAC:-}
+      - ONCALL_CERTS_DIR=/oncall-certs
+      - RENEW_INTERVAL_HOURS=${RENEW_INTERVAL_HOURS:-12}
+      # future: AWS_ACM_ARN, AWS_REGION
+    volumes:
+      - ./renew-loop.sh:/work/renew-loop.sh:ro
+      - ./hooks:/work/hooks:ro
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+      # OnCall PEM destination (adjust host path)
+      - ${ONCALL_CERTS_HOST:-/opt/ops/oncall/certs}:/oncall-certs
+    networks:
+      - opsnet
+    restart: unless-stopped
+
+networks:
+  opsnet:
+    external: true
+    name: opsnet
+
+volumes:
+  certbot_conf:
+  certbot_www:

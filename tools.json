@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-09-04",
+  "owner": "platform / SRE",
+  "tools": [
+    {
+      "id": "oncall-system",
+      "title": "OnCall System",
+      "status": "active",
+      "blurb": "Чергування, відсутності, звернення (інциденти) і дейлі-задачі для DevOps/SRE. Календар, адмінка, Slack/Telegram/Jira hooks.",
+      "repo": "https://github.com/OCherep/oncall-system",
+      "branch": "https://github.com/OCherep/oncall-system/tree/grok-1.0.0",
+      "live": null,
+      "docs": "https://github.com/OCherep/oncall-system/blob/grok-1.0.0/docs/API.md",
+      "tags": ["ops", "sre", "on-call", "incidents", "go"]
+    },
+    {
+      "id": "kstv-tech-radar",
+      "title": "KSTV Tech Radar",
+      "status": "beta",
+      "blurb": "Tech portfolio платформи: ADOPT / TRIAL / ASSESS / HOLD. ArchUnit, DORA, Jira proposals, зв’язок з міграцією мікросервісів.",
+      "repo": "https://github.com/OCherep/kstv-tech_radar",
+      "branch": "https://github.com/OCherep/kstv-tech_radar/tree/grok-0.0.1",
+      "live": null,
+      "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/METRICS.md",
+      "tags": ["architecture", "radar", "governance", "java"]
+    },
+    {
+      "id": "runbooks-portal",
+      "title": "Runbooks Portal",
+      "status": "planned",
+      "blurb": "Єдиний каталог runbook’ів для інцидентів і routine ops (пізніше — зв’язок з OnCall incidents).",
+      "repo": null,
+      "live": null,
+      "docs": null,
+      "tags": ["ops", "docs"]
+    },
+    {
+      "id": "service-catalog",
+      "title": "Service Catalog",
+      "status": "planned",
+      "blurb": "Каталог сервісів VidMind/KSTV: owners, SLO, репо, deploy path — міст між Tech Radar і OnCall.",
+      "repo": null,
+      "live": null,
+      "docs": null,
+      "tags": ["catalog", "ownership"]
+    },
+    {
+      "id": "dora-dashboard",
+      "title": "DORA Dashboard",
+      "status": "planned",
+      "blurb": "DF / lead time / CFR / recovery по ключових сервісах (див. kstv-tech_radar docs/DORA.md).",
+      "repo": null,
+      "live": null,
+      "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/DORA.md",
+      "tags": ["metrics", "delivery"]
+    }
+  ]
+}

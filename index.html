@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DevOps Hub · KSTV / VidMind</title>
+  <meta name="description" content="Єдина точка входу до інструментів DevOps: OnCall, Tech Radar та інші." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg"></div>
+  <header class="header">
+    <div class="brand">
+      <span class="logo">◈</span>
+      <div>
+        <strong>DevOps Hub</strong>
+        <span class="tag">KSTV · VidMind · platform tools</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#tools">Інструменти</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#how">Як додати</a>
+      <a href="https://github.com/OCherep/devops-hub" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Єдина перша сторінка</p>
+      <h1>Інструменти DevOps<br/>для команд і міжкомандної роботи</h1>
+      <p class="lead">
+        Центральний портал: чергування й звернення, tech portfolio (radar),
+        і місце для наступних сервісів — без розкиданих закладок.
+      </p>
+    </section>
+
+    <section id="tools" class="section">
+      <div class="section-head">
+        <h2>Активні інструменти</h2>
+        <p>Каталог читається з <code>tools.json</code> — додавай нові без правки HTML.</p>
+      </div>
+      <div id="tools-grid" class="grid">
+        <p class="loading">Завантаження…</p>
+      </div>
+    </section>
+
+    <section id="roadmap" class="section muted">
+      <div class="section-head">
+        <h2>Наступні ідеї (placeholder)</h2>
+        <p>Слот під майбутні проєкти — заповнюй у <code>tools.json</code> зі статусом <em>planned</em>.</p>
+      </div>
+      <div id="planned-grid" class="grid"></div>
+    </section>
+
+    <section id="how" class="section">
+      <div class="section-head">
+        <h2>Як узгодити й додати проєкт</h2>
+      </div>
+      <ol class="steps">
+        <li><strong>Repo</strong> — окремий GitHub-репозиторій (публічний або з доступом команді).</li>
+        <li><strong>README</strong> — мета, хто owner, як запустити, посилання на live/docs.</li>
+        <li><strong>tools.json</strong> — один об’єкт у цьому репо (id, title, status, links).</li>
+        <li><strong>Зворотне посилання</strong> — у README проєкту додати «Part of <a href="https://github.com/OCherep/devops-hub">DevOps Hub</a>».</li>
+        <li><strong>Опційно</strong> — Confluence-сторінка з embed цього порталу.</li>
+      </ol>
+      <pre class="code">{
+  "id": "my-tool",
+  "title": "My Tool",
+  "status": "active",
+  "blurb": "Коротко навіщо.",
+  "repo": "https://github.com/OCherep/…",
+  "live": null,
+  "docs": null,
+  "tags": ["ops", "sre"]
+}</pre>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>DevOps Hub · maintainers: platform / SRE</span>
+    <span id="catalog-meta"></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

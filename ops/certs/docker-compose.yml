@@ -5,7 +5,6 @@ services:
     restart: always
     volumes:
       - ./ui:/usr/share/nginx/html:ro
-      - ./status.json:/usr/share/nginx/html/status.json:ro
     networks:
       - opsnet
 

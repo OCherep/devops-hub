@@ -2,7 +2,7 @@
 # Inventory TLS certs on this host + optional AWS ACM.
 # Writes /opt/ops/certs/status.json (or $STATUS_OUT).
 set -eu
-OUT="${STATUS_OUT:-/opt/ops/certs/status.json}"
+OUT="${STATUS_OUT:-/opt/ops/certs/ui/status.json}"
 WARN_DAYS="${WARN_DAYS:-21}"
 NOW=$(date +%s)
 TMP=$(mktemp)

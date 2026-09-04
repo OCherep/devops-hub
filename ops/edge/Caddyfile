@@ -10,7 +10,9 @@
 	handle_path /oncall/* {
 		reverse_proxy oncall_nginx_5:80
 	}
-	handle_path /certs/* {
+	redir /certs /certs/ 308
+	handle /certs/* {
+		uri strip_prefix /certs
 		reverse_proxy ops_certs_ui:80
 	}
 	handle {

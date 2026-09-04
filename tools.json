@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "updated": "2026-09-04",
+  "version": "1.1.1",
+  "updated": "2026-09-05",
   "owner": "platform / SRE",
   "deploy": {
     "layout": "/opt/ops",
@@ -20,7 +20,13 @@
       "live": "https://s.ks.tv:85/",
       "docs": "https://github.com/OCherep/oncall-system/blob/grok-1.0.0/docs/API.md",
       "ops_dir": "/opt/ops/oncall",
-      "tags": ["ops", "sre", "on-call", "incidents", "go"]
+      "tags": [
+        "ops",
+        "sre",
+        "on-call",
+        "incidents",
+        "go"
+      ]
     },
     {
       "id": "kstv-tech-radar",
@@ -32,7 +38,29 @@
       "live": "https://s.ks.tv/radar/",
       "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/METRICS.md",
       "ops_dir": "/opt/ops/radar",
-      "tags": ["architecture", "radar", "governance", "java"]
+      "tags": [
+        "architecture",
+        "radar",
+        "governance",
+        "java"
+      ]
+    },
+    {
+      "id": "certs-tls",
+      "title": "Certificates SSL/TLS",
+      "status": "beta",
+      "blurb": "ZeroSSL ACME renew + PEM для OnCall. Hook AWS ACM import. Каталог /opt/ops/certs.",
+      "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/certs",
+      "branch": "https://github.com/OCherep/devops-hub/tree/main/ops/certs",
+      "live": null,
+      "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/certs/README.md",
+      "ops_dir": "/opt/ops/certs",
+      "tags": [
+        "tls",
+        "zerossl",
+        "acm",
+        "ops"
+      ]
     },
     {
       "id": "devops-hub",
@@ -43,7 +71,10 @@
       "live": "https://s.ks.tv/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/DEPLOY.md",
       "ops_dir": "/opt/ops/hub",
-      "tags": ["portal", "ops"]
+      "tags": [
+        "portal",
+        "ops"
+      ]
     },
     {
       "id": "runbooks-portal",
@@ -54,7 +85,10 @@
       "live": null,
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/_template/README.md",
       "ops_dir": "/opt/ops/runbooks",
-      "tags": ["ops", "docs"]
+      "tags": [
+        "ops",
+        "docs"
+      ]
     },
     {
       "id": "service-catalog",
@@ -65,7 +99,10 @@
       "live": null,
       "docs": null,
       "ops_dir": "/opt/ops/service-catalog",
-      "tags": ["catalog", "ownership"]
+      "tags": [
+        "catalog",
+        "ownership"
+      ]
     },
     {
       "id": "dora-dashboard",
@@ -76,7 +113,10 @@
       "live": null,
       "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/DORA.md",
       "ops_dir": "/opt/ops/dora-dashboard",
-      "tags": ["metrics", "delivery"]
+      "tags": [
+        "metrics",
+        "delivery"
+      ]
     }
   ]
 }

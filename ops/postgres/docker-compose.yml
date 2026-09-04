@@ -1,0 +1,31 @@
+# Shared platform PostgreSQL — /opt/ops/postgres
+# First consumer: certs inventory. OnCall міграція — окремим етапом.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ops_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ops-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-platform}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - opsnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ops} -d ${POSTGRES_DB:-platform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    # no host port by default — only opsnet
+    # ports: ["5432:5432"]   # розкоментуйте для psql з хоста
+
+networks:
+  opsnet:
+    external: true
+    name: opsnet
+
+volumes:
+  pgdata:

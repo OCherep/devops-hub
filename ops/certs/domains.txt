@@ -1,0 +1,3 @@
+# One hostname per line — used by inventory / future multi-renew
+s.ks.tv
+www.s.ks.tv

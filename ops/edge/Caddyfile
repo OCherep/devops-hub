@@ -39,6 +39,10 @@
 		reverse_proxy ops_certs_ui:80
 	}
 
+	handle /tools.json {
+		header Access-Control-Allow-Origin *
+		reverse_proxy ops_hub:80
+	}
 	handle {
 		reverse_proxy ops_hub:80
 	}

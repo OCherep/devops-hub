@@ -28,9 +28,11 @@
       <button type="button" data-theme-btn="dark" onclick="opsSetTheme('dark')">☾</button>
     </div>
     <nav class="nav">
-      <button type="button" class="btn" id="hub-login-btn">Увійти</button><span id="hub-who"></span><span id="hub-date-chip" class="date-chip"></span><a href="/">Hub</a>
-      <a href="/radar/">Radar</a>
-      <a href="https://s.ks.tv:85/">OnCall</a>
+      <button type="button" class="btn" id="hub-login-btn">Увійти</button><span id="hub-who"></span><span id="hub-date-chip" class="date-chip"></span>
+      <div class="nav-dd"><button type="button" class="btn" onclick="document.getElementById('hub-tools-menu').classList.toggle('open')">Інструменти ▾</button>
+      <div id="hub-tools-menu" class="nav-menu"></div></div><a href="/"></a>
+      
+      
     </nav>
   </header>
   <main class="certs">

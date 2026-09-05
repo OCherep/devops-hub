@@ -1,6 +1,8 @@
 #!/bin/bash
 # /opt/ops/hub/ops/deploy.sh — pull + up усіх модулів + місце на диску
 set -euo pipefail
+chmod +x "$0" 2>/dev/null || true
+find "${OPS_ROOT:-/opt/ops}/hub/ops" -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
 OPS="${OPS_ROOT:-/opt/ops}"
 echo "== disk =="
 df -h / /var /opt 2>/dev/null | awk 'NR==1 || /\/$|\/var|\/opt/'

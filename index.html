@@ -140,11 +140,6 @@
   </div>
 </div>
 <script src="chrome.js"></script>
-<script>
-fetch("tools.json").then(r=>r.json()).then(d=>{
-  const m=document.getElementById("hub-tools-menu"); if(!m) return;
-  m.innerHTML=(d.tools||[]).filter(t=>t.live).map(t=>`<a href="${t.live}">${t.title}</a>`).join("")||"<span class=muted>немає Live</span>";
-}).catch(()=>{});
-</script>
+
 </body>
 </html>

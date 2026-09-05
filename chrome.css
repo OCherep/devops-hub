@@ -26,3 +26,6 @@
 .hub-modal table{width:100%;border-collapse:collapse;font-size:13px}
 .hub-modal th,.hub-modal td{border-bottom:1px solid var(--border,#243056);padding:6px 8px;text-align:left}
 .hub-modal h4{margin:14px 0 6px}
+
+.spec-chip.duty-primary{background:#7f1d1d;border-color:#ef4444;color:#fecaca;font-weight:700}
+.spec-chip.duty-backup{background:#713f12;border-color:#eab308;color:#fef08a;font-weight:600}

@@ -30,7 +30,17 @@ up() {
 
 pull "$OPS/hub"    origin main
 pull "$OPS/radar"  origin grok-0.0.1
+# never lose OnCall secrets
+if [ -f "$OPS/oncall/.env" ]; then
+  cp -a "$OPS/oncall/.env" /tmp/oncall.env.bak
+  echo "preserved $OPS/oncall/.env"
+fi
 pull "$OPS/oncall" origin grok-1.0.0
+if [ -f /tmp/oncall.env.bak ]; then
+  cp -a /tmp/oncall.env.bak "$OPS/oncall/.env"
+  echo "restored $OPS/oncall/.env"
+fi
+# preserve oncall .env
 
 # sync edge/certs/postgres from hub tree
 mkdir -p "$OPS/edge" "$OPS/certs/ui" "$OPS/postgres"

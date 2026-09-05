@@ -2,6 +2,10 @@
 (function (w) {
   const BASES = ["/oncall-api", "https://s.ks.tv:85"];
   const SERVICE = document.documentElement.getAttribute("data-hub-service") || "hub";
+  function serviceId() {
+    const m = { hub: "devops-hub", "devops-hub": "devops-hub", "certs-tls": "certs-tls", "kstv-tech-radar": "kstv-tech-radar", oncall: "oncall-system" };
+    return m[SERVICE] || SERVICE;
+  }
   function token() { try { return localStorage.getItem("oncall_session") || ""; } catch (e) { return ""; } }
   function setToken(t) { try { t ? localStorage.setItem("oncall_session", t) : localStorage.removeItem("oncall_session"); } catch (e) {} }
 
@@ -179,22 +183,44 @@
 
   function showPerson(name) {
     const data = w.HubChrome.data || {};
-    const u = (data.team_members || []).find((x) => x.name === name || x.username === name) || { name };
     const day = todayISO();
+    const mem = (data.team_members || []).find((x) => x.name === name || x.username === name) || { name };
     let shifts = data.shifts || {};
     if (Array.isArray(shifts)) { const m = {}; shifts.forEach((s) => { if (s.date) m[s.date] = s; }); shifts = m; }
     const sh = shifts[day] || {};
-    const brb = (data.brb || {})[name];
-    const abs = (data.absences || []).filter((a) => (a.user_name === name) && (a.start_date || "") <= day && (a.end_date || "") >= day);
-    const role = (name === sh.primary_user) ? "основний черговий" : (name === sh.backup_user) ? "дублюючий черговий" : "фахівець";
-    document.getElementById("hc-person-body").innerHTML = `
-      <h3>${name}</h3>
-      <p>${role}${u.team_role ? " · " + u.team_role : ""}${u.role ? " · " + u.role : ""}</p>
-      <p>Email: ${u.email || "—"}<br>Slack: ${u.slack_id || "—"}<br>Тел: ${u.phone || "—"}</p>
-      <p>On-call: ${u.is_oncall ? "так" : "ні"} · roster: ${u.show_in_roster !== false ? "так" : "ні"}</p>
-      <p>BRB: ${brb ? JSON.stringify(brb) : "немає"}</p>
-      <p>Відсутності сьогодні: ${abs.length ? abs.map((a) => (a.type || "") + " " + a.start_date + "–" + a.end_date).join("; ") : "немає"}</p>
-      <button class="btn" type="button" data-close="hc-person">Закрити</button>`;
+    const abs = (data.absences || []).filter((a) => a.user_name === name && (a.start_date || "") <= day && (a.end_date || "") >= day);
+    const tasks = [];
+    Object.values(data.daily_tasks || {}).forEach((list) => {
+      (list || []).forEach((t) => {
+        if (t.user_name === name || t.responsible === name || t.created_by === name) {
+          if ((t.date || "") === day || (t.due_date || "") === day || ((t.date || "") <= day && (t.due_date || "9999") >= day)) tasks.push(t);
+        }
+      });
+    });
+    const incs = ((data.incidents || {})[day] || []).filter((i) => i.user_name === name || i.reported_for === name);
+    let h = `<h3>${name} · ${day}</h3>`;
+    if (mem.team_role) h += `<p><b>Роль у команді:</b> ${mem.team_role}</p>`;
+    if (sh.primary_user === name || sh.backup_user === name)
+      h += `<p><b>Чергування:</b> ${sh.primary_user === name ? "Основний" : ""}${sh.backup_user === name ? (sh.primary_user === name ? " · " : "") + "Дублюючий" : ""}</p>`;
+    h += `<h4>Відсутності</h4>` + (abs.length ? abs.map((a) => "• <b>" + (a.type || "") + "</b> (" + a.start_date + "–" + a.end_date + ")").join("<br>") : "Немає");
+    h += `<h4>Задачі з дейлі</h4>`;
+    if (tasks.length) {
+      h += '<div class="table-wrap"><table><thead><tr><th>Задача</th><th>Статус</th><th>Час</th></tr></thead><tbody>';
+      tasks.forEach((t) => {
+        h += `<tr><td>${(t.task_description || "").replace(/</g,"&lt;")}</td><td>${t.status || ""}</td><td>${t.total_minutes || 0} хв</td></tr>`;
+      });
+      h += "</tbody></table></div>";
+    } else h += "<p>Немає</p>";
+    h += `<h4>Звернення</h4>`;
+    if (incs.length) {
+      h += '<div class="table-wrap"><table><thead><tr><th>Опис</th><th>Пріоритет</th><th>Source</th><th>Час</th></tr></thead><tbody>';
+      incs.forEach((i) => {
+        h += `<tr><td>${(i.description || "").replace(/</g,"&lt;")}</td><td>${i.priority || ""}</td><td>${i.source || ""}</td><td>${i.duration_minutes || i.total_minutes || 0} хв</td></tr>`;
+      });
+      h += "</tbody></table></div>";
+    } else h += "<p>Немає</p>";
+    h += '<button class="btn" type="button" data-close="hc-person">Закрити</button>';
+    document.getElementById("hc-person-body").innerHTML = h;
     document.getElementById("hc-person-body").querySelector("[data-close]").onclick = () => close("hc-person");
     open("hc-person");
   }
@@ -239,7 +265,7 @@
     try {
       const r = await fetch("/tools.json");
       const d = await r.json();
-      menu.innerHTML = (d.tools || []).filter((t) => t.live && t.id !== SERVICE)
+      menu.innerHTML = (d.tools || []).filter((t) => t.live && t.id !== serviceId() && t.id !== SERVICE)
         .map((t) => `<a href="${t.live}">${t.title}</a>`).join("") || "<span>немає</span>";
     } catch (e) {}
   }
@@ -287,7 +313,10 @@
     const snap = grid.on_grid !== undefined ? grid : (data.on_grid || {});
     const on = snap.on_grid === true || snap._on_grid_now === "1";
     const dateEl = document.getElementById("hub-date-chip");
-    if (dateEl) dateEl.innerHTML = `<span class="dc-date">${todayISO()}</span><span class="dc-mode">${on ? "робочий час" : "неробочий час"}</span>`;
+    if (dateEl) {
+      dateEl.className = "date-chip " + (on ? "on-grid" : "off-grid");
+      dateEl.innerHTML = `<span class="dc-date">${todayISO()}</span><span class="dc-mode">${on ? "робочий час" : "неробочий час"}</span>`;
+    }
     const loginBtn = document.getElementById("hub-login-btn");
     const whoEl = document.getElementById("hub-who");
     if (w.HubChrome.profile) {

@@ -30,7 +30,10 @@
       <button type="button" class="btn" id="hub-login-btn" onclick="hubLoginClick()">Увійти</button>
       <span id="hub-who" class="tag"></span>
       <span id="hub-date-chip" class="date-chip">дата</span>
-      <a href="#tools">Інструменти</a>
+      <div class="nav-dd" id="hub-tools-dd">
+        <button type="button" class="btn" onclick="document.getElementById('hub-tools-menu').classList.toggle('open')">Інструменти ▾</button>
+        <div id="hub-tools-menu" class="nav-menu"></div>
+      </div>
       <a href="#roadmap">Roadmap</a>
       <a href="#how">Як додати</a>
       <a href="https://github.com/OCherep/devops-hub" target="_blank" rel="noopener">GitHub</a>
@@ -105,12 +108,15 @@
   <script src="app.js"></script>
   <script src="theme.js"></script>
 
-<div id="hub-inc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center">
+<div id="hub-inc-modal" class="hub-modal">
   <div class="card" style="max-width:420px;width:92%;padding:16px">
     <h3>Нове звернення</h3>
     <p class="muted">Без входу на сторінку OnCall. Обовʼязкові імʼя та email.</p>
     <label>Імʼя</label><input id="hi-name" style="width:100%;margin:4px 0 8px;padding:6px">
+    <label>Slack</label><div style="display:flex;gap:6px"><input id="hi-slack" style="flex:1;padding:6px" placeholder="@user або slack_id">
+    <button class="btn" type="button" onclick="lookupHubSlack()">Знайти</button></div>
     <label>Email</label><input id="hi-email" type="email" style="width:100%;margin:4px 0 8px;padding:6px">
+    <label>Оцінка (хв)</label><input id="hi-mins" type="number" value="15" style="width:100%;margin:4px 0 8px;padding:6px">
     <label>Пріоритет</label>
     <select id="hi-prio" style="width:100%;margin:4px 0 8px;padding:6px">
       <option>Звичайний</option><option>Підвищений</option><option>Високий</option><option>Критичний</option><option>Терміновий</option>
@@ -121,6 +127,23 @@
     <button class="btn" type="button" onclick="closeHubIncident()">Скасувати</button>
   </div>
 </div>
+
+<div id="hub-login-modal" class="hub-modal">
+  <div class="card" style="max-width:360px;width:92%;padding:16px">
+    <h3>Вхід OnCall</h3>
+    <label>Логін</label><input id="hl-user" autocomplete="username" style="width:100%;margin:4px 0 8px;padding:8px">
+    <label>Пароль</label><input id="hl-pass" type="password" autocomplete="current-password" style="width:100%;margin:4px 0 8px;padding:8px">
+    <p id="hl-status" class="muted"></p>
+    <button class="btn primary" type="button" onclick="submitHubLogin()">Увійти</button>
+    <button class="btn" type="button" onclick="closeHubLogin()">Скасувати</button>
+  </div>
+</div>
 <script src="roster.js"></script>
+<script>
+fetch("tools.json").then(r=>r.json()).then(d=>{
+  const m=document.getElementById("hub-tools-menu"); if(!m) return;
+  m.innerHTML=(d.tools||[]).filter(t=>t.live).map(t=>`<a href="${t.live}">${t.title}</a>`).join("")||"<span class=muted>немає Live</span>";
+}).catch(()=>{});
+</script>
 </body>
 </html>

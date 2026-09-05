@@ -18,3 +18,11 @@
 .date-chip{display:inline-flex;flex-direction:column;align-items:center;padding:4px 12px;border:1px solid var(--border);border-radius:12px;line-height:1.15}
 .date-chip .dc-date{font-weight:700;font-size:13px}
 .date-chip .dc-mode{font-size:10px;color:var(--muted)}
+
+.date-chip.on-grid{background:#14532d;color:#bbf7d0;border-color:#22c55e}
+.date-chip.off-grid{background:#7f1d1d;color:#fecaca;border-color:#ef4444}
+[data-theme="light"] .date-chip.on-grid{background:#dcfce7;color:#166534;border-color:#86efac}
+[data-theme="light"] .date-chip.off-grid{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+.hub-modal table{width:100%;border-collapse:collapse;font-size:13px}
+.hub-modal th,.hub-modal td{border-bottom:1px solid var(--border,#243056);padding:6px 8px;text-align:left}
+.hub-modal h4{margin:14px 0 6px}

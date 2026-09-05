@@ -27,6 +27,9 @@
       <button type="button" data-theme-btn="dark" onclick="opsSetTheme('dark')">☾</button>
     </div>
     <nav class="nav">
+      <button type="button" class="btn" id="hub-login-btn" onclick="hubLoginClick()">Увійти</button>
+      <span id="hub-who" class="tag"></span>
+      <span id="hub-date-chip" class="date-chip">дата</span>
       <a href="#tools">Інструменти</a>
       <a href="#roadmap">Roadmap</a>
       <a href="#how">Як додати</a>
@@ -93,5 +96,23 @@
 
   <script src="app.js"></script>
   <script src="theme.js"></script>
+
+<div id="hub-inc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center">
+  <div class="card" style="max-width:420px;width:92%;padding:16px">
+    <h3>Нове звернення</h3>
+    <p class="muted">Без входу на сторінку OnCall. Обовʼязкові імʼя та email.</p>
+    <label>Імʼя</label><input id="hi-name" style="width:100%;margin:4px 0 8px;padding:6px">
+    <label>Email</label><input id="hi-email" type="email" style="width:100%;margin:4px 0 8px;padding:6px">
+    <label>Пріоритет</label>
+    <select id="hi-prio" style="width:100%;margin:4px 0 8px;padding:6px">
+      <option>Звичайний</option><option>Підвищений</option><option>Високий</option><option>Критичний</option><option>Терміновий</option>
+    </select>
+    <label>Опис</label><textarea id="hi-desc" rows="4" style="width:100%;margin:4px 0 8px;padding:6px"></textarea>
+    <p id="hi-status" class="muted"></p>
+    <button class="btn primary" type="button" onclick="submitHubIncident()">Надіслати</button>
+    <button class="btn" type="button" onclick="closeHubIncident()">Скасувати</button>
+  </div>
+</div>
+<script src="roster.js"></script>
 </body>
 </html>

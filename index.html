@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-hub-service="hub">
 <script data-theme-boot>document.documentElement.setAttribute("data-theme",(function(){try{var m=localStorage.getItem("ops_theme")||localStorage.getItem("oncall_theme")||"system";if(m==="light"||m==="dark")return m;return matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){return"dark"}})());</script>
 <head>
   <meta charset="utf-8" />
@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="theme.css" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="chrome.css" />
 </head>
 <body>
   <div class="bg"></div>
@@ -138,7 +139,7 @@
     <button class="btn" type="button" onclick="closeHubLogin()">Скасувати</button>
   </div>
 </div>
-<script src="roster.js"></script>
+<script src="chrome.js"></script>
 <script>
 fetch("tools.json").then(r=>r.json()).then(d=>{
   const m=document.getElementById("hub-tools-menu"); if(!m) return;

@@ -4,20 +4,41 @@
 		root * /var/www/certbot
 		file_server
 	}
+
 	handle_path /radar/* {
 		reverse_proxy ops_radar:80
 	}
+
+	# OnCall UI через той самий :443 (опційно)
 	handle_path /oncall/* {
-		reverse_proxy oncall_nginx_5:80
+		reverse_proxy oncall_nginx_5:80 {
+			transport http {
+				read_timeout 25s
+				dial_timeout 3s
+			}
+		}
 	}
-	handle_path /oncall-api/* {
-		reverse_proxy oncall_nginx_5:80
+
+	# API для хаба. strip /oncall-api → /api/...
+	handle /oncall-api/* {
+		uri strip_prefix /oncall-api
+		reverse_proxy oncall_nginx_5:80 {
+			header_up Host {http.request.host}
+			header_up X-Forwarded-Proto https
+			header_up X-Real-IP {http.request.remote}
+			transport http {
+				read_timeout 25s
+				dial_timeout 3s
+			}
+		}
 	}
+
 	redir /certs /certs/ 308
 	handle /certs/* {
 		uri strip_prefix /certs
 		reverse_proxy ops_certs_ui:80
 	}
+
 	handle {
 		reverse_proxy ops_hub:80
 	}

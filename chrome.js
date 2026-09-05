@@ -248,10 +248,13 @@
     el.innerHTML = users.map((u) => {
       const name = u.name || u.username || "";
       const until = typeof brb[name] === "string" ? brb[name] : (brb[name] && (brb[name].until || brb[name].until_at)) || "";
-      const role = name === sh.primary_user ? "основний" : name === sh.backup_user ? "дублюючий" : "";
+      const isP = name === sh.primary_user, isB = name === sh.backup_user;
+      const role = isP ? "основний" : isB ? "дублюючий" : "";
       const ab = abs.find((a) => a.user_name === name && (a.start_date || "") <= day && (a.end_date || "") >= day);
       const sub = [role, until ? "BRB" : "", ab ? ((ab.type || "відсутність") + " " + (ab.start_date || "") + "–" + (ab.end_date || "")) : ""].filter(Boolean).join(" · ");
-      return `<button type="button" class="spec-chip ${ab || until ? "dim" : ""}" style="--chip:${chipColor(name)}" data-person="${name}">
+      const extra = isP ? " duty-primary" : isB ? " duty-backup" : "";
+      const col = isP ? "#dc2626" : isB ? "#ca8a04" : chipColor(name);
+      return `<button type="button" class="spec-chip${extra}${ab || until ? " dim" : ""}" style="--chip:${col}" data-person="${name}">
         <span class="spec-name">${name}${ab ? " (відсутній)" : ""}</span>
         ${sub ? `<span class="spec-sub">${sub}</span>` : ""}</button>`;
     }).join("") + `<button type="button" class="spec-chip action" id="hc-open-inc">Звернення</button>`;

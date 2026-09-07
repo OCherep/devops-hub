@@ -58,11 +58,19 @@ dayEl.value=new Date().toISOString().slice(0,10);
 let filterWho='', filterKw='';
 function qs(){const h=document.getElementById('hist').checked?'1':'0'; return `day=${dayEl.value}&history=${h}`+(filterWho?`&who=${encodeURIComponent(filterWho)}`:'');}
 async function load(){
+  try {
+  const dbg=await fetch(API+'/debug').then(r=>r.json()).catch(e=>({error:String(e)}));
+  if(dbg && (dbg.db_error||dbg.error)) {
+    document.getElementById('kw').innerHTML='<span class="muted">DB: '+(dbg.db_error||dbg.error)+' · bot='+dbg.bot+' user='+dbg.user+'</span>';
+  }
   const [kw, pe, it]=await Promise.all([
     fetch(API+'/keywords?day='+dayEl.value).then(r=>r.json()),
     fetch(API+'/people?day='+dayEl.value).then(r=>r.json()),
     fetch(API+'/mentions?'+qs()).then(r=>r.json()),
   ]);
+  if(kw.error||pe.error||it.error){
+    document.getElementById('kw').innerHTML='<span class="muted">'+(kw.error||pe.error||it.error)+'</span>';
+  }
   document.getElementById('kw').innerHTML=(kw.today||[]).map(k=>`<button type="button" class="${filterKw===k.word?'on':''}" data-w="${k.word}">${k.word} · ${k.n}</button>`).join('')
     || '<span class="muted">Поки немає ключів за день</span>';
   document.getElementById('kw').onclick=e=>{const b=e.target.closest('button'); if(!b)return; filterKw=filterKw===b.dataset.w?'':b.dataset.w; renderItems(it.items||[]); load();};
@@ -97,6 +105,7 @@ function renderItems(items){
     if(n) n.style.display=n.style.display==='none'?'':'none';
   };
 }
+} catch(e){ document.getElementById("kw").textContent=String(e);} }
 dayEl.onchange=load; document.getElementById('hist').onchange=load;
 document.getElementById('bf').onclick=async()=>{
   const s=document.getElementById('bfst'); s.textContent='запуск…';

@@ -77,7 +77,7 @@ const EMO={
 };
 function emojify(s){
   s=String(s||"");
-  s=s.replace(/:([+a-z0-9_]+):/gi,function(_,n){return EMO[n.toLowerCase()]||EMO[n]||_;});
+  s=s.replace(/:([+a-z0-9_]+)(?:::skin-tone-[0-9])?:/gi,function(_,n){n=n.toLowerCase().replace(/::skin-tone-[0-9]/,"");return EMO[n]||"";});
   return s;
 }
 function rxHtml(rx){
@@ -137,9 +137,9 @@ async function load(){
     else crumb.textContent="";
     if(window._layer.who && !window._layer.author){
       const au=await fetch(API+"/people?day="+dayEl.value+"&who="+encodeURIComponent(window._layer.who)).then(r=>r.json());
-      document.getElementById("people").innerHTML='<tr data-back="1"><td colspan="5" class="muted">← до команди</td></tr>'+(au.authors||[]).map(a=>'<tr data-author="'+(a.author||"")+'"><td>'+(a.author||"—")+"</td><td>автор</td><td>"+(a.total_count||0)+"</td><td><b>"+(a.today_count||0)+"</b></td><td class=mono>"+String(a.last_at||"—").replace("T"," ").slice(0,19)+"</td></tr>").join("");
+      document.getElementById("people").innerHTML='<tr data-back="1"><td colspan="5" class="muted">← до команди</td></tr>'+(au.authors||[]).filter(a=>Number(a.total_count||0)).map(a=>'<tr data-author="'+(a.author||"")+'"><td>'+(a.author||"—")+"</td><td>автор</td><td>"+(a.total_count||0)+"</td><td><b>"+(a.today_count||0)+"</b></td><td class=mono>"+String(a.last_at||"—").replace("T"," ").slice(0,19)+"</td></tr>").join("");
     } else if(!window._layer.who){
-      document.getElementById("people").innerHTML=(pe.people||[]).map(p=>{
+      document.getElementById("people").innerHTML=(pe.people||[]).filter(p=>p.mention_type==="team"||Number(p.total_count||0)||Number(p.today_count||0)).map(p=>{
         const stale=Number(p.stale_team||0);
         const cls=stale?" style=\"background:#7f1d1d;color:#fecaca\"":"";
         return "<tr data-who=\""+p.mentioned+"\""+cls+"><td>"+p.mentioned+(stale?" · ⚠ "+stale:"")+"</td><td>"+p.mention_type+"</td><td>"+(p.total_count||0)+"</td><td><b>"+(p.today_count||0)+"</b></td><td class=mono>"+String(p.last_at||"—").replace("T"," ").slice(0,19)+"</td></tr>";

@@ -59,6 +59,8 @@ up "$OPS/postgres"
 up "$OPS/hub"
 up "$OPS/radar"
 up "$OPS/certs"
+cp -a "$OPS/hub/ops/mentions/." "$OPS/mentions/" 2>/dev/null || true
+up "$OPS/mentions"
 up "$OPS/oncall"
 up "$OPS/edge"
 

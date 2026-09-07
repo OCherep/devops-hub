@@ -45,9 +45,13 @@
 	}
 	
 	redir /mentions /mentions/ 308
-	handle /mentions/* {
-		uri strip_prefix /mentions
-		reverse_proxy ops_mentions:8091
+	handle_path /mentions/* {
+		reverse_proxy ops_mentions:8091 {
+			transport http {
+				dial_timeout 3s
+				read_timeout 20s
+			}
+		}
 	}
 
 	handle {

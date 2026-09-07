@@ -11,6 +11,8 @@ services:
       SLACK_DEVOPS_GROUP: ${SLACK_DEVOPS_GROUP:-devops-team}
       PORT: "8091"
     networks: [opsnet]
+    volumes:
+      - ./ui:/app/ui:ro
     expose: ["8091"]
 networks:
   opsnet:

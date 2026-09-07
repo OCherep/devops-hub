@@ -50,7 +50,7 @@ pull "$OPS/oncall" origin grok-1.0.0
 restore_env "$OPS/oncall/.env" /tmp/oncall.env.bak
 restore_env "$OPS/postgres/.env" /tmp/postgres.env.bak
 
-mkdir -p "$OPS/edge" "$OPS/certs/ui" "$OPS/postgres/init" "$OPS/mentions/ui"
+mkdir -p "$OPS/edge" "$OPS/certs/ui" "$OPS/postgres/init" "$OPS/mentions/ui" "$OPS/ether"
 cp -a "$OPS/hub/ops/edge/." "$OPS/edge/" 2>/dev/null || true
 cp -a "$OPS/hub/ops/postgres/docker-compose.yml" "$OPS/postgres/" 2>/dev/null || true
 cp -a "$OPS/hub/ops/postgres/init/." "$OPS/postgres/init/" 2>/dev/null || true
@@ -77,6 +77,9 @@ fi
 up "$OPS/hub"
 up "$OPS/radar"
 up "$OPS/certs"
+mkdir -p "$OPS/ether"
+cp -a "$OPS/hub/ops/ether/." "$OPS/ether/" 2>/dev/null || true
+up "$OPS/ether"
 up "$OPS/mentions" --build --force-recreate
 up "$OPS/oncall"
 up "$OPS/edge" --force-recreate
@@ -85,6 +88,7 @@ echo "== health (opsnet, без hairpin) =="
 docker exec ops_edge wget -qO- -T 3 http://oncall_nginx_5/api/on-grid >/dev/null 2>&1 && echo "oncall: OK" || echo "oncall: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_hub/tools.json >/dev/null 2>&1 && echo "hub: OK" || echo "hub: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_mentions:8091/health >/dev/null 2>&1 && echo "mentions: OK" || echo "mentions: FAIL"
+docker exec ops_edge wget -qO- -T 3 http://ops_ether/ >/dev/null 2>&1 && echo "ether: OK" || echo "ether: FAIL (очікувано, якщо модуль ще не зібраний)"
 docker exec ops_edge wget -qO- -T 3 http://ops_certs_ui/ >/dev/null 2>&1 && echo "certs: OK" || echo "certs: FAIL"
 
 echo "== disk after =="

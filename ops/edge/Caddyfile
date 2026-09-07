@@ -43,6 +43,13 @@
 		header Access-Control-Allow-Origin *
 		reverse_proxy ops_hub:80
 	}
+	
+	redir /mentions /mentions/ 308
+	handle /mentions/* {
+		uri strip_prefix /mentions
+		reverse_proxy ops_mentions:8091
+	}
+
 	handle {
 		reverse_proxy ops_hub:80
 	}

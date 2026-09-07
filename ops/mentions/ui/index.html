@@ -100,8 +100,13 @@ function renderItems(items){
 dayEl.onchange=load; document.getElementById('hist').onchange=load;
 document.getElementById('bf').onclick=async()=>{
   const s=document.getElementById('bfst'); s.textContent='пошук…';
-  try{const d=await fetch(API+'/backfill').then(r=>r.json()); s.textContent='додано '+(d.ingested||0)+' · '+(d.error||JSON.stringify(d.queries||d.group||{})); load();}
-  catch(e){s.textContent=String(e)}
+  try{
+    const r=await fetch(API+'/backfill');
+    const txt=await r.text();
+    let d={}; try{d=JSON.parse(txt)}catch(e){s.textContent='не JSON ('+r.status+'): '+txt.slice(0,180); return;}
+    s.textContent='додано '+(d.ingested||0)+' · '+(d.mode||'')+' · '+(d.error||d.hint||JSON.stringify(d.detail||d.queries||{})).slice(0,300);
+    load();
+  }catch(e){s.textContent=String(e)}
 };
 load();
 </script>

@@ -53,47 +53,59 @@ def slack_api(method, payload):
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.loads(r.read().decode())
 
-def search_messages(query, count=50):
-    d = slack_api("search.messages", {"query": query, "count": str(count), "sort": "timestamp"})
+def search_messages(query, count=50, force_team=False):
+    d = slack_api("search.messages", {"query": query, "count": str(count), "sort": "timestamp", "sort_dir": "desc"})
+    if not d.get("ok"):
+        return 0, False, d.get("error") or "search_failed", 0
     matches = ((d.get("messages") or {}).get("matches") or [])
     n = 0
     for m in matches:
         ev = {
-            "text": m.get("text") or "",
+            "text": m.get("text") or m.get("previous") or "",
             "channel": (m.get("channel") or {}).get("id") or "",
             "ts": m.get("ts") or "",
             "user": m.get("user") or "",
         }
-        # channel name already in search hit
+        chname = (m.get("channel") or {}).get("name") or ""
         try:
-            n += ingest_message(ev)
+            added = ingest_message(ev, force_team=force_team or bool(chname))
+            if added == 0 and ev["text"]:
+                added = ingest_message({**ev, "text": ev["text"] + f" @{TEAM_GROUP}"}, force_team=True)
+            n += added
         except Exception as e:
             print("ingest", e, flush=True)
-    return n, d.get("ok"), d.get("error")
+    return n, True, None, len(matches)
+
+def team_group_id():
+    d = slack_api("usergroups.list", {"include_users": "false"})
+    for g in d.get("usergroups") or []:
+        handle = (g.get("handle") or "").lower()
+        name = (g.get("name") or "").lower()
+        if handle in (TEAM_GROUP.lower(), "devops-team") or "devops" in handle or "devops" in name:
+            return g.get("id"), g.get("handle") or TEAM_GROUP
+    return "", TEAM_GROUP
 
 def backfill():
     if not BOT:
         return {"error": "no SLACK_BOT_TOKEN"}
+    gid, handle = team_group_id()
     total = 0
     qlist = [
-        f"@{TEAM_GROUP}",
-        f"<@{TEAM_GROUP}>",
-        "to:devops-team",
+        f"@{handle}",
+        "has:@devops-team",
+        "has:mention devops",
     ]
-    # roster names from DB if any
-    try:
-        rows = q("SELECT DISTINCT mentioned FROM mentions.items WHERE mention_type='user' LIMIT 40", fetch=True)
-        for r in rows:
-            if r["mentioned"]:
-                qlist.append("@" + r["mentioned"].split()[0])
-    except Exception:
-        pass
+    if gid:
+        qlist.insert(0, f"<@subteam^{gid}>")
+        qlist.insert(0, gid)
     detail = []
     for query in qlist:
-        n, ok, err = search_messages(query, 40)
+        n, ok, err, hits = search_messages(query, 50, force_team=True)
         total += n
-        detail.append({"q": query, "ingested": n, "ok": ok, "error": err})
-    return {"ingested": total, "queries": detail}
+        detail.append({"q": query, "ingested": n, "hits": hits, "ok": ok, "error": err})
+        if n:
+            break
+    return {"ingested": total, "group": {"id": gid, "handle": handle}, "queries": detail}
 
 def permalink(channel, ts):
     d = slack_api("chat.getPermalink", {"channel": channel, "message_ts": ts})
@@ -126,7 +138,7 @@ def store_item(**kw):
                 %(mention_type)s,%(mentioned_id)s,%(mentioned)s,%(text_full)s,%(text_short)s,%(keywords)s,%(msg_at)s,%(day)s)
         ON CONFLICT (slack_ts, channel_id, mentioned_id) DO NOTHING""", kw)
 
-def ingest_message(ev):
+def ingest_message(ev, force_team=False):
     text = ev.get("text") or ""
     cid = ev.get("channel") or ""
     ts = ev.get("ts") or ""
@@ -144,6 +156,8 @@ def ingest_message(ev):
         name = m.group(2) or TEAM_GROUP
         targets.append(("team", m.group(1), name))
     if f"@{TEAM_GROUP}" in text.lower() and not targets:
+        targets.append(("team", TEAM_GROUP, TEAM_GROUP))
+    if force_team and not targets:
         targets.append(("team", TEAM_GROUP, TEAM_GROUP))
     for m in MENTION_RE.finditer(text):
         sid = m.group(1)

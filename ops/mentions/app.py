@@ -488,14 +488,30 @@ class H(BaseHTTPRequestHandler):
                 sql += " AND (mentioned ILIKE %s OR mentioned_id=%s)"
                 args += [f"%{who}%", who]
             if not hist:
-                sql += " AND day=%s"; args.append(day)
+                sql += " AND (day=%s OR (mention_type='team' AND COALESCE(reply_count,0)=0 AND msg_at < NOW() - INTERVAL '10 hours'))"
+                args.append(day)
             else:
                 sql += " AND day>=%s::date - 14"; args.append(day)
+            author = (qs.get("author") or [""])[0]
+            if author:
+                sql += " AND author_name=%s"
+                args.append(author)
             sql += " ORDER BY msg_at DESC LIMIT 500"
             try:
                 rows = q(sql, args, fetch=True)
             except Exception as e:
                 return self._json(500, {"error": str(e)})
+            for row in rows:
+                try:
+                    rx = row.get("reactions_json") or "[]"
+                    empty_rx = rx in ("[]","null","")
+                    stale = (row.get("mention_type")=="team"
+                             and int(row.get("reply_count") or 0)==0
+                             and empty_rx
+                             and row.get("msg_at"))
+                    row["stale"] = bool(stale)
+                except Exception:
+                    row["stale"] = False
             return self._json(200, {"items": rows, "day": day})
         if path in ("/api/people", "/mentions/api/people"):
             day = (qs.get("day") or [str(date.today())])[0]

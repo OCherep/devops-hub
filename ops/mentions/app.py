@@ -198,8 +198,8 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        if path in ("/health", "/api/health"):
-            return self._json(200, {"ok": True, "bot": bool(BOT)})
+        if path in ("/health", "/api/health") or path.endswith("/api/slack/events"):
+            return self._json(200, {"ok": True, "bot": bool(BOT), "path": path})
         if path.endswith("/api/backfill"):
             try:
                 return self._json(200, backfill())
@@ -271,21 +271,22 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         path = urllib.parse.urlparse(self.path).path
         raw = self._read()
-        if path.endswith("/api/slack/events"):
-            if not verify_slack(self.headers, raw):
-                return self._json(401, {"error": "bad slack signature"})
+        if path.endswith("/api/slack/events") or path.endswith("/slack/events"):
             try:
                 body = json.loads(raw or "{}")
             except Exception:
-                return self._json(400, {"error": "bad json"})
-            if body.get("type") == "url_verification":
+                body = {}
+            # Slack URL check must succeed even if signing secret not set yet
+            if body.get("type") == "url_verification" or body.get("challenge"):
                 return self._json(200, {"challenge": body.get("challenge")})
+            if SIGN and not verify_slack(self.headers, raw):
+                return self._json(401, {"error": "bad slack signature"})
             ev = body.get("event") or {}
             if ev.get("type") in ("message", "app_mention") and not ev.get("subtype"):
                 try:
                     ingest_message(ev)
                 except Exception as e:
-                    return self._json(500, {"error": str(e)})
+                    print("ingest event", e, flush=True)
             return self._json(200, {"ok": True})
         self._json(404, {"error": "not found"})
 

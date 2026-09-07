@@ -61,7 +61,35 @@ function qs(){
   const h=document.getElementById("hist").checked?"1":"0";
   return "day="+dayEl.value+"&history="+h+(filterWho?"&who="+encodeURIComponent(filterWho):"");
 }
+
+const EMO={
+  "+1":"👍","-1":"👎","thumbsup":"👍","thumbsdown":"👎","ok_hand":"👌",
+  "clap":"👏","wave":"👋","pray":"🙏","heart":"❤️","hearts":"💕",
+  "fire":"🔥","tada":"🎉","star":"⭐","eyes":"👀","thinking_face":"🤔",
+  "smile":"😄","smiley":"😃","grin":"😁","laughing":"😆","joy":"😂",
+  "slightly_smiling_face":"🙂","wink":"😉","blush":"😊","innocent":"😇",
+  "heart_eyes":"😍","kissing_heart":"😘","sweat_smile":"😅","sweat":"😓",
+  "cry":"😢","sob":"😭","scream":"😱","rage":"😡","confused":"😕",
+  "white_check_mark":"✅","heavy_check_mark":"✔️","x":"❌","warning":"⚠️",
+  "question":"❓","exclamation":"❗","100":"💯","rocket":"🚀","boom":"💥",
+  "beer":"🍺","coffee":"☕","pizza":"🍕","thumbsup_all":"👍",
+  "raised_hands":"🙌","muscle":"💪","ok":"🆗","v":"✌️","point_up":"☝️"
+};
+function emojify(s){
+  s=String(s||"");
+  s=s.replace(/:([+a-z0-9_]+):/gi,function(_,n){return EMO[n.toLowerCase()]||EMO[n]||_;});
+  return s;
+}
 function rxHtml(rx){
+  rx=Array.isArray(rx)?rx:(function(){try{return JSON.parse(rx||"[]")}catch(e){return []}})();
+  return rx.map(function(r){
+    const raw=r.name||"";
+    const face=EMO[raw]||emojify(":"+raw+":");
+    const who=(r.users&&r.users.length)?" "+r.users.join(", "):"";
+    return '<span title="'+raw+who+'">'+face+" "+(r.count||0)+"</span>";
+  }).join(" ");
+}
+function rxHtmlUnused(rx){
   rx=Array.isArray(rx)?rx:(function(){try{return JSON.parse(rx||"[]")}catch(e){return []}})();
   return rx.map(r=>":"+(r.name||"")+": "+(r.count||0)+((r.users&&r.users.length)?" ("+r.users.join(", ")+")":"")).join(" · ");
 }
@@ -77,10 +105,10 @@ function renderItems(items){
     const thread=replies.map(r=>'<div class="muted" style="margin:6px 0 0 12px"><b>'+(r.user||"")+'</b> '+(r.text||"")+(r.reactions&&r.reactions.length?" · "+rxHtml(r.reactions):"")+"</div>").join("");
     return '<tr data-i="'+idx+'"><td>+</td><td class="mono">'+String(i.msg_at||"").replace("T"," ").slice(0,19)
       +"</td><td>#"+(i.channel_name||i.channel_id||"")+"</td><td>"+(i.author_name||"—")+"</td><td>"+(i.mentioned||"")
-      +'</td><td>'+(i.text_short||"").replace(/</g,"&lt;")+"</td><td>"+badge+'</td><td>'
+      +'</td><td>'+emojify(i.text_short||"").replace(/</g,"&lt;")+"</td><td>"+badge+'</td><td>'
       +(i.permalink?'<a href="'+i.permalink+'" target="_blank">msg</a>':"—")+"</td></tr>"
       +'<tr class="exp" id="full-'+idx+'" style="display:none"><td colspan="8"><pre style="white-space:pre-wrap">'
-      +(i.text_full||"").replace(/</g,"&lt;")+"</pre><div>"+rx+"</div>"+thread+"</td></tr>";
+      +emojify(i.text_full||"").replace(/</g,"&lt;")+"</pre><div>"+rx+"</div>"+thread+"</td></tr>";
   }).join("");
   el.onclick=function(e){
     const tr=e.target.closest("tr[data-i]"); if(!tr) return;

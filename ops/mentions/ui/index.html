@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="uk" data-hub-service="slack-mentions">
+<script>document.documentElement.setAttribute("data-theme",(function(){try{var m=localStorage.getItem("ops_theme")||"dark";if(m==="light"||m==="dark")return m;return matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){return"dark"}})());</script>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slack Mentions · DevOps</title>
+<link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/chrome.css">
+<style>
+body{margin:0;background:var(--bg,#0b1020);color:var(--text,#e8eefc);font:14px/1.45 system-ui,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:24px 16px}
+.kw{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 16px}
+.kw button{border:1px solid var(--border,#243056);background:transparent;color:inherit;border-radius:999px;padding:4px 10px;cursor:pointer}
+.kw button.on{background:#1d4ed8;border-color:#3b82f6}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border,#243056);vertical-align:top}
+tr.exp td{background:color-mix(in srgb,#3b82f6 8%, transparent)}
+.mono{font-family:ui-monospace,monospace;font-size:12px}
+.muted{color:var(--muted,#9aa8c7)}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border,#243056)}
+</style>
+</head>
+<body>
+<header class="top">
+  <strong>Slack Mentions</strong>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="theme-switch">
+      <button type="button" data-theme-btn="system" onclick="opsSetTheme('system')">Авто</button>
+      <button type="button" data-theme-btn="light" onclick="opsSetTheme('light')">☀</button>
+      <button type="button" data-theme-btn="dark" onclick="opsSetTheme('dark')">☾</button>
+    </div>
+    <span id="hub-date-chip" class="date-chip"></span>
+    <button class="btn" id="hub-login-btn">Увійти</button><span id="hub-who"></span>
+    <div class="nav-dd"><button class="btn" type="button" onclick="document.getElementById('hub-tools-menu').classList.toggle('open')">Інструменти ▾</button>
+      <div id="hub-tools-menu" class="nav-menu"></div></div>
+  </div>
+</header>
+<main>
+  <p class="muted">Згадки @devops-team і окремих членів у Slack. Postgres schema mentions.* · пізніше зв’язок з OnCall roster.</p>
+  <label>День <input type="date" id="day"></label>
+  <label style="margin-left:12px"><input type="checkbox" id="hist"> історія 14 днів</label>
+  <h2>Ключові слова сьогодні</h2>
+  <div class="kw" id="kw"></div>
+  <h2>Команда</h2>
+  <table><thead><tr><th>Хто</th><th>Тип</th><th>Сьогодні</th><th>Останнє</th><th>Лінк</th></tr></thead>
+    <tbody id="people"></tbody></table>
+  <h2 id="list-title">Усі згадки</h2>
+  <table><thead><tr><th></th><th>Час</th><th>Чат</th><th>Кому</th><th>Повідомлення</th><th>Slack</th></tr></thead>
+    <tbody id="rows"></tbody></table>
+</main>
+<script src="/theme.js"></script>
+<script src="/chrome.js"></script>
+<script>
+const API='/mentions/api';
+const dayEl=document.getElementById('day');
+dayEl.value=new Date().toISOString().slice(0,10);
+let filterWho='', filterKw='';
+function qs(){const h=document.getElementById('hist').checked?'1':'0'; return `day=${dayEl.value}&history=${h}`+(filterWho?`&who=${encodeURIComponent(filterWho)}`:'');}
+async function load(){
+  const [kw, pe, it]=await Promise.all([
+    fetch(API+'/keywords?day='+dayEl.value).then(r=>r.json()),
+    fetch(API+'/people?day='+dayEl.value).then(r=>r.json()),
+    fetch(API+'/mentions?'+qs()).then(r=>r.json()),
+  ]);
+  document.getElementById('kw').innerHTML=(kw.today||[]).map(k=>`<button type="button" class="${filterKw===k.word?'on':''}" data-w="${k.word}">${k.word} · ${k.n}</button>`).join('')
+    || '<span class="muted">Поки немає ключів за день</span>';
+  document.getElementById('kw').onclick=e=>{const b=e.target.closest('button'); if(!b)return; filterKw=filterKw===b.dataset.w?'':b.dataset.w; renderItems(it.items||[]); load();};
+  document.getElementById('people').innerHTML=(pe.people||[]).map(p=>`<tr data-who="${p.mentioned}">
+    <td>${p.mentioned}</td><td>${p.mention_type}</td><td><b>${p.today_count||0}</b></td>
+    <td class="mono">${p.last_at||'—'}</td>
+    <td>${p.last_link?`<a href="${p.last_link}" target="_blank">відкрити</a>`:'—'}</td></tr>`).join('')
+    || '<tr><td colspan="5" class="muted">Немає даних — потрібен Slack Events</td></tr>';
+  document.getElementById('people').onclick=e=>{
+    const tr=e.target.closest('tr[data-who]'); if(!tr)return;
+    filterWho=filterWho===tr.dataset.who?'':tr.dataset.who;
+    document.getElementById('list-title').textContent=filterWho?('Згадки: '+filterWho):'Усі згадки';
+    load();
+  };
+  renderItems(it.items||[]);
+}
+function renderItems(items){
+  if(filterKw) items=items.filter(i=>(i.keywords||[]).includes(filterKw));
+  document.getElementById('rows').innerHTML=items.map((i,idx)=>`
+    <tr data-i="${idx}"><td>+</td>
+      <td class="mono">${String(i.msg_at||'').replace('T',' ').slice(0,19)}</td>
+      <td>#${i.channel_name||i.channel_id}</td>
+      <td>${i.mentioned} <span class="muted">${i.mention_type}</span></td>
+      <td>${(i.text_short||'').replace(/</g,'&lt;')}</td>
+      <td>${i.permalink?`<a href="${i.permalink}" target="_blank">msg</a>`:'—'}</td></tr>
+    <tr class="exp" id="full-${idx}" style="display:none"><td colspan="6"><pre style="white-space:pre-wrap">${(i.text_full||'').replace(/</g,'&lt;')}</pre>
+      <div class="muted">keywords: ${(i.keywords||[]).join(', ')||'—'}</div></td></tr>`).join('')
+    || '<tr><td colspan="6" class="muted">Порожньо</td></tr>';
+  document.getElementById('rows').onclick=e=>{
+    const tr=e.target.closest('tr[data-i]'); if(!tr)return;
+    const n=document.getElementById('full-'+tr.dataset.i);
+    if(n) n.style.display=n.style.display==='none'?'':'none';
+  };
+}
+dayEl.onchange=load; document.getElementById('hist').onchange=load;
+load();
+</script>
+</body></html>

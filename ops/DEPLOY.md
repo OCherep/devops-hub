@@ -12,13 +12,13 @@
 
 ```text
 Internet
-  ├── :80 / :443  → ops_edge (Caddy) → ops_hub:80, ops_radar:80, oncall_nginx_5:80  [opsnet]
+  ├── :80 / :443  → ops_edge (Caddy) → ops_hub:80, ops_radar:80, ops_ether:80, oncall_nginx_5:80  [opsnet]
   └── :85         → oncall_nginx_5:443 (прямий HTTPS OnCall)
 
 Правила:
 - Edge — єдиний власник host :80 і :443.
 - OnCall compose публікує ТІЛЬКИ "85:443". Внутрішній listen :80 — для Caddy на opsnet, без publish.
-- Hub/Radar — без host ports, лише opsnet.
+- Hub/Radar/Ether — без host ports, лише opsnet.
 - Перед up: /opt/ops/network.sh (мережа opsnet).
 ```
 

@@ -54,6 +54,11 @@
 		}
 	}
 
+	redir /ether /ether/ 308
+	handle_path /ether/* {
+		reverse_proxy ops_ether:80
+	}
+
 	handle {
 		reverse_proxy ops_hub:80
 	}

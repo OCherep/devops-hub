@@ -54,7 +54,16 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   url="$(echo "$url" | xargs)"
   ref="$(echo "$ref" | xargs)"
   [[ "$id" == "hub" || "$id" == "edge" ]] && continue
-  [[ "$url" == "." ]] && continue
+  # Local modules that live in this ops/ tree (url=.)
+  if [[ "$url" == "." ]]; then
+    src="$SCRIPT_DIR/$id"
+    dst="$ROOT/$id"
+    if [[ -d "$src" && "$src" != "$dst" && ! -e "$dst" ]]; then
+      cp -a "$src" "$dst"
+      echo "copied local module $id"
+    fi
+    continue
+  fi
   target="$ROOT/$id"
   if [[ -d "$target/.git" ]]; then
     echo "exists $id — skip clone"

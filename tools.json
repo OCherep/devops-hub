@@ -1,5 +1,5 @@
 {
-  "version": "1.1.2",
+  "version": "1.1.3",
   "updated": "2026-09-07",
   "owner": "platform / SRE",
   "deploy": {
@@ -131,6 +131,23 @@
         "slack",
         "ops",
         "mentions"
+      ]
+    },
+    {
+      "id": "ether",
+      "title": "Ефір",
+      "status": "beta",
+      "blurb": "Control plane overlay: очі, конектори, CI/CD смуги. Не SoT. Join service=ether. Не на шляху абонента.",
+      "repo": "https://github.com/OCherep/ether",
+      "branch": "https://github.com/OCherep/ether/tree/grok-0.0.1",
+      "live": "https://s.ks.tv/ether/",
+      "docs": "https://github.com/OCherep/ether/blob/grok-0.0.1/docs/devops-hub.md",
+      "ops_dir": "/opt/ops/ether",
+      "tags": [
+        "ops",
+        "sre",
+        "overlay",
+        "control-plane"
       ]
     }
   ]

@@ -50,6 +50,7 @@ cd hub
 |-----|--------|
 | `https://<host>/` | DevOps Hub |
 | `https://<host>/radar/` | Tech Radar |
+| `https://<host>/ether/` | Ефір (overlay) |
 | `https://<host>:85/` | OnCall (без змін) |
 
 Деталі: [DEPLOY.md](./DEPLOY.md), шаблон: [_template/](./_template/).

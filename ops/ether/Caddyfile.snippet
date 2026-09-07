@@ -1,0 +1,6 @@
+# Paste into /opt/ops/edge/Caddyfile inside the site block.
+
+redir /ether /ether/ 308
+handle_path /ether/* {
+	reverse_proxy ops_ether:80
+}

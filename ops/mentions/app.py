@@ -15,6 +15,7 @@ USER = os.getenv("SLACK_USER_TOKEN", "")
 SIGN = os.getenv("SLACK_SIGNING_SECRET", "")
 TEAM_GROUP = os.getenv("SLACK_DEVOPS_GROUP", "devops-team")
 PORT = int(os.getenv("PORT", "8091"))
+ONCALL_API = os.getenv("ONCALL_API", "http://oncall_nginx_5")
 
 SCHEMA_SQL = """
 CREATE SCHEMA IF NOT EXISTS mentions;
@@ -72,6 +73,85 @@ def keywords():
     except Exception:
         return []
 
+
+def refresh_oncall_roster():
+    """Load slack_id + names from OnCall team_members into mentions.roster."""
+    import datetime as dt
+    now = dt.date.today()
+    url = f"{ONCALL_API.rstrip('/')}/api/data?year={now.year}&month={now.month}"
+    try:
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=12) as r:
+            data = json.loads(r.read().decode())
+    except Exception as e:
+        print("oncall roster", e, flush=True)
+        return []
+    members = data.get("team_members") or data.get("users") or []
+    out = []
+    for m in members:
+        if m.get("show_in_roster") is False:
+            continue
+        sid = (m.get("slack_id") or m.get("slack") or "").strip()
+        name = (m.get("name") or m.get("username") or "").strip()
+        uname = (m.get("username") or "").strip()
+        if not name and not sid:
+            continue
+        try:
+            q("""INSERT INTO mentions.roster (slack_id, name, username, is_team)
+                 VALUES (%s,%s,%s,false)
+                 ON CONFLICT (slack_id) DO UPDATE SET name=EXCLUDED.name, username=EXCLUDED.username""",
+              (sid or name, name, uname))
+        except Exception as e:
+            print("roster upsert", e, flush=True)
+        out.append({"slack_id": sid, "name": name, "username": uname})
+    # team handle
+    try:
+        q("""INSERT INTO mentions.roster (slack_id, name, username, is_team)
+             VALUES (%s,%s,%s,true)
+             ON CONFLICT (slack_id) DO NOTHING""",
+          ("S03QEQF27AN", TEAM_GROUP, TEAM_GROUP))
+    except Exception:
+        pass
+    print("roster", len(out), flush=True)
+    return out
+
+def roster_allow():
+    rows = []
+    try:
+        rows = q("SELECT slack_id, name, username, is_team FROM mentions.roster", fetch=True) or []
+    except Exception:
+        rows = []
+    if not rows:
+        rows = refresh_oncall_roster()
+        try:
+            rows = q("SELECT slack_id, name, username, is_team FROM mentions.roster", fetch=True) or rows
+        except Exception:
+            pass
+    ids, names = set(), set()
+    for r in rows:
+        if isinstance(r, dict):
+            if r.get("slack_id"): ids.add(str(r["slack_id"]).lstrip("@").upper())
+            if r.get("name"): names.add(r["name"].lower())
+            if r.get("username"): names.add(r["username"].lower())
+        else:
+            if r.get("slack_id"): ids.add(str(r["slack_id"]).lstrip("@").upper())
+    names.add(TEAM_GROUP.lower())
+    names.add("devops-team")
+    ids.add("S03QEQF27AN")
+    return ids, names
+
+def allowed_mention(mid, name):
+    ids, names = roster_allow()
+    mid = (mid or "").lstrip("@")
+    name = (name or "").lstrip("@")
+    if mid.upper() in ids or mid in ids:
+        return True
+    if name.lower() in names:
+        return True
+    if "devops" in name.lower():
+        return True
+    return False
+
 def extract_kw(text):
     found = []
     low = text.lower()
@@ -122,11 +202,13 @@ def history_channel(cid, limit=80):
 def backfill():
     """Workspace-wide: user token + search.messages. Fallback: history in joined channels."""
     if USER:
-        queries = [
-            "@devops-team",
-            "<!subteam^S03QEQF27AN>",
-            "has:@devops-team",
-        ]
+        roster = refresh_oncall_roster()
+        queries = ["@devops-team", "<!subteam^S03QEQF27AN>"]
+        for m in roster[:30]:
+            if m.get("name"):
+                queries.append("@" + m["name"].split()[0])
+            if m.get("slack_id") and m["slack_id"].startswith("U"):
+                queries.append("<@" + m["slack_id"] + ">")
         total, detail = 0, []
         for query in queries:
             d = slack_api_tok(USER, "search.messages", {"query": query, "count": "50", "sort": "timestamp", "sort_dir": "desc"})
@@ -233,6 +315,7 @@ def ingest_message(ev, force_team=False):
         nm = m.group(2) or (user_name(sid) if BOT else sid)
         targets.append(("user", sid, nm))
     kws = extract_kw(text)
+    targets = [(typ, mid, name) for typ, mid, name in targets if allowed_mention(mid, name) or typ == "team"]
     for typ, mid, name in targets:
         store_item(
             slack_ts=ts, channel_id=cid, channel_name=chn, permalink=link,
@@ -291,7 +374,13 @@ class H(BaseHTTPRequestHandler):
                 cnt = (row or {}).get("n") or 0
             except Exception as e:
                 err = str(e)
-            return self._json(200, {"bot": bool(BOT), "user": bool(USER), "db": cnt, "db_error": err})
+            nros=0
+            try:
+                rr=q("SELECT COUNT(*) AS n FROM mentions.roster", fetch=True, one=True)
+                nros=(rr or {}).get("n") or 0
+            except Exception:
+                pass
+            return self._json(200, {"bot": bool(BOT), "user": bool(USER), "db": cnt, "roster": nros, "db_error": err})
         if path.endswith("/api/backfill/status"):
             return self._json(200, BACKFILL_JOB)
         if path.endswith("/api/backfill"):
@@ -406,6 +495,7 @@ def poll_loop():
 
 if __name__ == "__main__":
     ensure_schema()
+    refresh_oncall_roster()
     print(f"mentions listening :{PORT} bot={bool(BOT)} user={bool(USER)}", flush=True)
     import threading
     threading.Thread(target=poll_loop, daemon=True).start()

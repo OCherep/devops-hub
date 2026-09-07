@@ -1,0 +1,16 @@
+services:
+  mentions:
+    build: .
+    container_name: ops_mentions
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://ops:ops@ops_postgres:5432/platform}
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
+      SLACK_DEVOPS_GROUP: ${SLACK_DEVOPS_GROUP:-devops-team}
+      PORT: "8091"
+    networks: [opsnet]
+    expose: ["8091"]
+networks:
+  opsnet:
+    external: true

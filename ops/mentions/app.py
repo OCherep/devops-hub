@@ -15,6 +15,42 @@ USER = os.getenv("SLACK_USER_TOKEN", "")
 SIGN = os.getenv("SLACK_SIGNING_SECRET", "")
 TEAM_GROUP = os.getenv("SLACK_DEVOPS_GROUP", "devops-team")
 PORT = int(os.getenv("PORT", "8091"))
+
+SCHEMA_SQL = """
+CREATE SCHEMA IF NOT EXISTS mentions;
+CREATE TABLE IF NOT EXISTS mentions.items (
+  id            BIGSERIAL PRIMARY KEY,
+  slack_ts      TEXT NOT NULL,
+  channel_id    TEXT NOT NULL DEFAULT '',
+  channel_name  TEXT NOT NULL DEFAULT '',
+  permalink     TEXT NOT NULL DEFAULT '',
+  author_id     TEXT NOT NULL DEFAULT '',
+  author_name   TEXT NOT NULL DEFAULT '',
+  mention_type  TEXT NOT NULL DEFAULT 'user',
+  mentioned_id  TEXT NOT NULL DEFAULT '',
+  mentioned     TEXT NOT NULL DEFAULT '',
+  text_full     TEXT NOT NULL DEFAULT '',
+  text_short    TEXT NOT NULL DEFAULT '',
+  keywords      TEXT[] NOT NULL DEFAULT '{}',
+  msg_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  day           DATE NOT NULL DEFAULT CURRENT_DATE,
+  UNIQUE (slack_ts, channel_id, mentioned_id)
+);
+CREATE INDEX IF NOT EXISTS idx_mentions_day ON mentions.items (day DESC, msg_at DESC);
+CREATE TABLE IF NOT EXISTS mentions.keywords (
+  id SERIAL PRIMARY KEY,
+  word TEXT UNIQUE NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'service'
+);
+"""
+
+def ensure_schema():
+    try:
+        q(SCHEMA_SQL)
+        print("schema ok", flush=True)
+    except Exception as e:
+        print("schema err", e, flush=True)
+
 BACKFILL_JOB = {"status": "idle", "result": None}
 
 def db():
@@ -247,6 +283,15 @@ class H(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         if path in ("/health", "/api/health") or path.endswith("/api/slack/events"):
             return self._json(200, {"ok": True, "bot": bool(BOT), "path": path})
+        if path.endswith("/api/debug"):
+            cnt = 0
+            err = None
+            try:
+                row = q("SELECT COUNT(*) AS n FROM mentions.items", fetch=True, one=True)
+                cnt = (row or {}).get("n") or 0
+            except Exception as e:
+                err = str(e)
+            return self._json(200, {"bot": bool(BOT), "user": bool(USER), "db": cnt, "db_error": err})
         if path.endswith("/api/backfill/status"):
             return self._json(200, BACKFILL_JOB)
         if path.endswith("/api/backfill"):
@@ -360,7 +405,8 @@ def poll_loop():
         _t.sleep(300)
 
 if __name__ == "__main__":
-    print(f"mentions listening :{PORT} bot={bool(BOT)}", flush=True)
+    ensure_schema()
+    print(f"mentions listening :{PORT} bot={bool(BOT)} user={bool(USER)}", flush=True)
     import threading
     threading.Thread(target=poll_loop, daemon=True).start()
     ThreadingHTTPServer(("0.0.0.0", PORT), H).serve_forever()

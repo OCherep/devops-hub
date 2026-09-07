@@ -1,83 +1,39 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-hub-service="ether">
+<script>document.documentElement.setAttribute("data-theme",(function(){try{var m=localStorage.getItem("ops_theme")||"dark";if(m==="light"||m==="dark")return m;return matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){return"dark"}})());</script>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ефір · DevOps Hub</title>
-  <style>
-    :root { color-scheme: dark; }
-    body {
-      font-family: ui-sans-serif, system-ui, sans-serif;
-      background: #0b1020;
-      color: #e8eefc;
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-    main {
-      max-width: 40rem;
-      width: 100%;
-    }
-    p, li { color: #b7c2dc; line-height: 1.5; }
-    a { color: #5b8cff; }
-    .kicker {
-      font-size: 11px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #7d8aa8;
-    }
-    h1 { font-size: 1.6rem; margin: 0.35rem 0 0.75rem; font-weight: 650; }
-    .badge {
-      display: inline-block;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: #243056;
-      color: #c5d4ff;
-      margin-right: 6px;
-    }
-    code {
-      font-family: ui-monospace, monospace;
-      font-size: 0.85em;
-      background: #151b2e;
-      padding: 0.1em 0.4em;
-      border-radius: 4px;
-    }
-    ul { padding-left: 1.1rem; }
-    .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.25rem; }
-    .links a {
-      text-decoration: none;
-      border: 1px solid #2a3554;
-      padding: 8px 12px;
-      border-radius: 8px;
-    }
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ефір · DevOps Hub</title>
+<link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/chrome.css">
+<style>
+body{margin:0;background:var(--bg,#0b1020);color:var(--text,#e8eefc);font:15px/1.5 system-ui,sans-serif}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border,#243056)}
+main{max-width:720px;margin:32px auto;padding:0 16px}
+.muted{color:var(--muted,#9aa8c7)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:#243056;margin-right:6px}
+</style>
 </head>
 <body>
-  <main>
-    <p class="kicker">DevOps Hub · overlay</p>
-    <h1>Ефір</h1>
-    <p>
-      <span class="badge">beta</span>
-      <span class="badge">t2</span>
-      <span class="badge">service=ether</span>
-    </p>
-    <p>
-      Control plane поверх Jenkins, GitLab devops, Grafana і DataDog.
-      Читає стан і ставить заявки. Не замінює SoT і не несе playback.
-    </p>
-    <ul>
-      <li>Код: <code>OCherep/ether@grok-0.0.1</code></li>
-      <li>Join: <code>service=ether</code></li>
-      <li>Owner: devops · не на шляху абонента</li>
-    </ul>
-    <div class="links">
-      <a href="/">← Hub</a>
-      <a href="https://github.com/OCherep/ether/tree/grok-0.0.1">Repo</a>
-      <a href="https://github.com/OCherep/ether/blob/grok-0.0.1/docs/devops-hub.md">Docs</a>
+<header class="top">
+  <strong>Ефір</strong>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="theme-switch">
+      <button type="button" data-theme-btn="system" onclick="opsSetTheme('system')">Авто</button>
+      <button type="button" data-theme-btn="light" onclick="opsSetTheme('light')">☀</button>
+      <button type="button" data-theme-btn="dark" onclick="opsSetTheme('dark')">☾</button>
     </div>
-  </main>
-</body>
-</html>
+    <span id="hub-date-chip" class="date-chip"></span>
+    <button class="btn" id="hub-login-btn">Увійти</button><span id="hub-who"></span>
+    <div class="nav-dd"><button class="btn" type="button" onclick="document.getElementById('hub-tools-menu').classList.toggle('open')">Інструменти ▾</button>
+      <div id="hub-tools-menu" class="nav-menu"></div></div>
+  </div>
+</header>
+<main>
+  <p class="muted">Overlay control plane · не SoT, не playback</p>
+  <p><span class="badge">beta</span><span class="badge">service=ether</span></p>
+  <p>Повна оболонка живе в репозиторії <code>OCherep/ether@grok-0.0.1</code>. Цей шлях на хабі — реєстрація сервісу. Щоб підключити бойовий UI — клонувати репо в <code>/opt/ops/ether-app</code> і прописати reverse_proxy у Caddy замість landing.</p>
+  <p><a href="/">← Hub</a> · <a href="https://github.com/OCherep/ether/tree/grok-0.0.1">Repo</a></p>
+</main>
+<script src="/theme.js"></script>
+<script src="/chrome.js"></script>
+</body></html>

@@ -11,6 +11,7 @@ except Exception:
 
 DSN = os.getenv("DATABASE_URL", "postgres://ops:ops@ops_postgres:5432/platform")
 BOT = os.getenv("SLACK_BOT_TOKEN", "")
+USER = os.getenv("SLACK_USER_TOKEN", "")
 SIGN = os.getenv("SLACK_SIGNING_SECRET", "")
 TEAM_GROUP = os.getenv("SLACK_DEVOPS_GROUP", "devops-team")
 PORT = int(os.getenv("PORT", "8091"))
@@ -42,16 +43,19 @@ def extract_kw(text):
             found.append(w)
     return found
 
-def slack_api(method, payload):
-    if not BOT:
-        return {}
+def slack_api_tok(token, method, payload):
+    if not token:
+        return {"ok": False, "error": "no_token"}
     data = urllib.parse.urlencode(payload).encode()
     req = urllib.request.Request(
         f"https://slack.com/api/{method}", data=data,
-        headers={"Authorization": f"Bearer {BOT}", "Content-Type": "application/x-www-form-urlencoded"},
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/x-www-form-urlencoded"},
     )
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.loads(r.read().decode())
+
+def slack_api(method, payload):
+    return slack_api_tok(BOT, method, payload)
 
 def list_bot_channels():
     chans = []
@@ -77,16 +81,46 @@ def history_channel(cid, limit=80):
     d = slack_api("conversations.history", {"channel": cid, "limit": str(limit)})
     return d.get("messages") or [], d.get("ok"), d.get("error")
 
+
 def backfill():
+    """Workspace-wide: user token + search.messages. Fallback: history in joined channels."""
+    if USER:
+        queries = [
+            "@devops-team",
+            "<!subteam^S03QEQF27AN>",
+            "has:@devops-team",
+        ]
+        total, detail = 0, []
+        for query in queries:
+            d = slack_api_tok(USER, "search.messages", {"query": query, "count": "50", "sort": "timestamp", "sort_dir": "desc"})
+            if not d.get("ok"):
+                detail.append({"q": query, "error": d.get("error")})
+                continue
+            matches = ((d.get("messages") or {}).get("matches") or [])
+            got = 0
+            for m in matches:
+                ev = {
+                    "text": m.get("text") or "",
+                    "channel": (m.get("channel") or {}).get("id") or "",
+                    "ts": m.get("ts") or "",
+                    "user": m.get("user") or "",
+                }
+                try:
+                    got += ingest_message(ev, force_team=True)
+                except Exception as e:
+                    print("ingest", e, flush=True)
+            total += got
+            detail.append({"q": query, "hits": len(matches), "ingested": got})
+        return {"ingested": total, "mode": "search.user", "detail": detail}
     if not BOT:
-        return {"error": "no SLACK_BOT_TOKEN"}
+        return {"error": "no SLACK_USER_TOKEN (xoxp) and no SLACK_BOT_TOKEN"}
+    # fallback joined channels only
     chans, err = list_bot_channels()
     if err and not chans:
-        return {"error": err, "ingested": 0}
-    total, scanned, detail = 0, 0, []
-    for ch in chans[:80]:
+        return {"error": err, "ingested": 0, "mode": "history.bot", "hint": "додайте SLACK_USER_TOKEN=xoxp-... для пошуку по всьому workspace"}
+    total, detail = 0, []
+    for ch in (chans or [])[:40]:
         msgs, ok, e = history_channel(ch["id"])
-        scanned += 1
         if not ok:
             detail.append({"ch": ch.get("name"), "error": e})
             continue
@@ -96,13 +130,13 @@ def backfill():
                 continue
             ev = {"text": m.get("text") or "", "channel": ch["id"], "ts": m.get("ts") or "", "user": m.get("user") or ""}
             try:
-                got += ingest_message(ev, force_team=False)
-            except Exception as ex:
-                print("ingest", ex, flush=True)
+                got += ingest_message(ev)
+            except Exception:
+                pass
         total += got
         if got:
-            detail.append({"ch": ch.get("name"), "ingested": got, "msgs": len(msgs)})
-    return {"ingested": total, "channels": len(chans), "scanned": scanned, "detail": detail[:30], "note": "bot token cannot use search.messages; scanned conversations.history"}
+            detail.append({"ch": ch.get("name"), "ingested": got})
+    return {"ingested": total, "mode": "history.bot", "channels": len(chans or []), "detail": detail[:20], "hint": "для всіх каналів потрібен xoxp (User OAuth Token)"}
 
 
 def permalink(channel, ts):

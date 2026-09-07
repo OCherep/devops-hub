@@ -15,6 +15,7 @@ USER = os.getenv("SLACK_USER_TOKEN", "")
 SIGN = os.getenv("SLACK_SIGNING_SECRET", "")
 TEAM_GROUP = os.getenv("SLACK_DEVOPS_GROUP", "devops-team")
 PORT = int(os.getenv("PORT", "8091"))
+BACKFILL_JOB = {"status": "idle", "result": None}
 
 def db():
     if not psycopg2:
@@ -246,11 +247,23 @@ class H(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         if path in ("/health", "/api/health") or path.endswith("/api/slack/events"):
             return self._json(200, {"ok": True, "bot": bool(BOT), "path": path})
+        if path.endswith("/api/backfill/status"):
+            return self._json(200, BACKFILL_JOB)
         if path.endswith("/api/backfill"):
-            try:
-                return self._json(200, backfill())
-            except Exception as e:
-                return self._json(500, {"error": str(e)})
+            if BACKFILL_JOB.get("status") == "running":
+                return self._json(200, BACKFILL_JOB)
+            import threading
+            BACKFILL_JOB["status"] = "running"
+            BACKFILL_JOB["result"] = None
+            def _run():
+                try:
+                    BACKFILL_JOB["result"] = backfill()
+                    BACKFILL_JOB["status"] = "done"
+                except Exception as e:
+                    BACKFILL_JOB["result"] = {"error": str(e)}
+                    BACKFILL_JOB["status"] = "error"
+            threading.Thread(target=_run, daemon=True).start()
+            return self._json(200, {"status": "running", "ingested": 0, "hint": "пошук у фоні, повторіть кнопку за 10с"})
         if path in ("/api/mentions", "/mentions/api/mentions"):
             day = (qs.get("day") or [str(date.today())])[0]
             who = (qs.get("who") or [""])[0]

@@ -4,7 +4,7 @@
 
 ```text
 /opt/ops/
-├── edge/           # Caddy :80/:443 → hub + /radar/
+├── edge/           # Caddy :80/:443 → hub + /radar/ + /ether/
 ├── hub/            # цей репозиторій (devops-hub)
 ├── radar/          # kstv-tech_radar
 ├── oncall/         # oncall-system (порт хоста 85 без змін)
@@ -22,7 +22,7 @@
 2. У кожній директорії — свій `docker-compose.yml` (і лише свої volumes/env).
 3. Спільна мережа: **`opsnet`** (`external: true` у compose модулів).
 4. На хост **не** ставимо nginx/java/node — тільки Docker.
-5. **OnCall** лишається на **`:85`** (як зараз). Hub і Radar — через edge **`:443`**.
+5. **OnCall** лишається на **`:85`** (як зараз). Hub і Radar — через edge **`:443`**. Ether — теж через edge, але **без strip** (SSR).
 6. Новий сервіс: `cp -a _template <id>` → заповнити → додати в `modules.env` + за потреби route в `edge/Caddyfile` + запис у `tools.json`.
 
 ## Швидкий старт на EC2

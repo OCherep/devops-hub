@@ -1,6 +1,7 @@
 # Paste into /opt/ops/edge/Caddyfile inside the site block.
+# Ether is TanStack SSR — do NOT use handle_path (strip). Radar may strip.
 
 redir /ether /ether/ 308
-handle_path /ether/* {
+handle /ether/* {
 	reverse_proxy ops_ether:80
 }

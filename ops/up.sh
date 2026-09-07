@@ -59,7 +59,7 @@ if [[ $# -gt 0 ]]; then
 fi
 
 # Ordered defaults: edge last so backends exist
-ORDER=(hub radar oncall edge)
+ORDER=(hub radar oncall ether edge)
 declared=()
 while IFS= read -r line || [[ -n "$line" ]]; do
   [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue

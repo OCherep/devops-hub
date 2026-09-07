@@ -18,7 +18,8 @@ Internet
 Правила:
 - Edge — єдиний власник host :80 і :443.
 - OnCall compose публікує ТІЛЬКИ "85:443". Внутрішній listen :80 — для Caddy на opsnet, без publish.
-- Hub/Radar/Ether — без host ports, лише opsnet.
+- Hub/Radar — без host ports, лише opsnet. Radar: nginx + `handle_path` (strip).
+- Ether — без host ports, Node/Nitro в Docker, Caddy **`handle /ether/*` без strip** (SSR, base `/ether/`).
 - Перед up: /opt/ops/network.sh (мережа opsnet).
 ```
 
@@ -115,6 +116,7 @@ cd /opt/ops/my-service
 ```bash
 cd /opt/ops/hub && git pull && docker compose up -d --force-recreate
 cd /opt/ops/radar && git pull && docker compose up -d --force-recreate
+cd /opt/ops/ether && git pull --ff-only origin grok-0.0.1 && docker compose up -d --build
 cd /opt/ops/oncall && git pull && docker compose up -d --build
 ```
 
@@ -124,5 +126,7 @@ cd /opt/ops/oncall && git pull && docker compose up -d --build
 |---------|----------------|
 | edge не стартує | `docker ps -a`, зайнятий 80/443 oncall’ом |
 | /radar/ 404 | `handle_path` vs `handle`, чи `ops_radar` в opsnet |
+| /ether/ без стилів | Caddy має бути `handle /ether/*` **без** strip; образ зібраний з `VITE_BASE=/ether/` |
+| /ether/ 502 | старий landing не прибрано, або `ops_ether` не в opsnet |
 | oncall OK, hub ні | `docker network inspect opsnet` |
 | ACME fail | DNS A-record, SG 80, не два процеси на 80 |

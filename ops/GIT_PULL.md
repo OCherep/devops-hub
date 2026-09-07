@@ -40,4 +40,27 @@ git stash list
 | `scripts/nginx-entrypoint.sh` | chmod / локальний TLS |
 | `scripts/issue-letsencrypt.sh` | те саме |
 
-Не коміть секрети (`.env`, ключі) у stash з `-u`, якщо не треба.
+## Ether (`/opt/ops/ether`, гілка grok-0.0.1)
+
+Повна оболонка, не landing. Якщо каталог ще nginx-заглушка (не git):
+
+```bash
+cd /opt/ops
+docker compose -f ether/docker-compose.yml down || true
+rm -rf ether
+git clone --branch grok-0.0.1 --single-branch https://github.com/OCherep/ether.git ether
+/opt/ops/up.sh ether
+/opt/ops/up.sh edge
+```
+
+Оновлення:
+
+```bash
+cd /opt/ops/ether
+git status -sb
+git pull --ff-only origin grok-0.0.1
+docker compose up -d --build
+```
+
+Caddy: **`handle /ether/*` без strip**. Після pull Hub скопіюй `ops/edge/Caddyfile` в `/opt/ops/edge/` і `up.sh edge`.
+

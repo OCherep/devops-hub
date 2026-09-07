@@ -55,7 +55,9 @@
 	}
 
 	redir /ether /ether/ 308
-	handle_path /ether/* {
+	# Ether is SSR (TanStack / Nitro). Do NOT strip — app base is /ether/.
+	# Radar keeps handle_path because it is static with relative URLs.
+	handle /ether/* {
 		reverse_proxy ops_ether:80
 	}
 

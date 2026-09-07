@@ -7,7 +7,7 @@
 | **Portal** | `index.html` + [`tools.json`](./tools.json) |
 | **Ops layout** | [`ops/`](./ops/) → `/opt/ops` на інстансі |
 | **OnCall** | окремо, **host port 85** (без змін) |
-| **Edge** | Caddy `:80/:443` → Hub + `/radar/` + `/ether/` |
+| **Edge** | Caddy `:80/:443` → Hub + `/radar/` (strip) + `/ether/` (без strip, SSR) |
 
 ## Портал
 
@@ -26,7 +26,8 @@ python3 -m http.server 8080
 /opt/ops/
   edge/     # :80/:443
   hub/      # this repo
-  radar/    # tech radar
+  radar/    # tech radar (static nginx)
+  ether/    # clone of OCherep/ether@grok-0.0.1 (Nitro)
   oncall/   # :85
   _template/
   modules.env

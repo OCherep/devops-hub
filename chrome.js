@@ -3,7 +3,7 @@
   const BASES = ["/oncall-api", "https://s.ks.tv:85"];
   const SERVICE = document.documentElement.getAttribute("data-hub-service") || "hub";
   function serviceId() {
-    const m = { hub: "devops-hub", "devops-hub": "devops-hub", "certs-tls": "certs-tls", "kstv-tech-radar": "kstv-tech-radar", oncall: "oncall-system" };
+    const m = { hub: "devops-hub", "devops-hub": "devops-hub", "certs-tls": "certs-tls", "kstv-tech-radar": "kstv-tech-radar", oncall: "oncall-system", ether: "ether" };
     return m[SERVICE] || SERVICE;
   }
   function token() { try { return localStorage.getItem("oncall_session") || ""; } catch (e) { return ""; } }

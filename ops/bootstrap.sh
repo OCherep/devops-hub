@@ -71,6 +71,10 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   fi
   if [[ -e "$target" ]]; then
     echo "path $target exists but not git — skip"
+    if [[ "$id" == "ether" ]]; then
+      echo "WARN: $target looks like the old nginx landing."
+      echo "      rm -rf $target && re-run bootstrap to clone OCherep/ether@grok-0.0.1"
+    fi
     continue
   fi
   echo "clone $id ($ref)"

@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS mentions.items (
   keywords      TEXT[] NOT NULL DEFAULT '{}',
   msg_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   day           DATE NOT NULL DEFAULT CURRENT_DATE,
+  reactions_json TEXT NOT NULL DEFAULT '[]',
+  replies_json    TEXT NOT NULL DEFAULT '[]',
+  reply_count     INT NOT NULL DEFAULT 0,
   UNIQUE (slack_ts, channel_id, mentioned_id)
 );
 CREATE INDEX IF NOT EXISTS idx_mentions_day ON mentions.items (day DESC, msg_at DESC);
@@ -48,10 +51,14 @@ CREATE TABLE IF NOT EXISTS mentions.keywords (
 def ensure_schema():
     try:
         q(SCHEMA_SQL)
+        q("ALTER TABLE mentions.items ADD COLUMN IF NOT EXISTS reactions_json TEXT DEFAULT '[]'")
+        q("ALTER TABLE mentions.items ADD COLUMN IF NOT EXISTS replies_json TEXT DEFAULT '[]'")
+        q("ALTER TABLE mentions.items ADD COLUMN IF NOT EXISTS reply_count INT DEFAULT 0")
         print("schema ok", flush=True)
     except Exception as e:
         print("schema err", e, flush=True)
 
+NAME_CACHE = {}
 BACKFILL_JOB = {"status": "idle", "result": None}
 
 def db():
@@ -276,6 +283,64 @@ def user_name(uid):
 MENTION_RE = re.compile(r"<@([UW][A-Z0-9]+)(?:\|([^>]+))?>")
 SUBTEAM_RE = re.compile(r"<!subteam\^([A-Z0-9]+)(?:\|@?([^>]+))?>")
 
+
+def display_name(uid):
+    if not uid:
+        return ""
+    uid = uid.strip("<>@")
+    if uid in NAME_CACHE:
+        return NAME_CACHE[uid]
+    if uid.startswith("S") or uid == TEAM_GROUP:
+        NAME_CACHE[uid] = "@devops-team"
+        return NAME_CACHE[uid]
+    if BOT and uid.startswith("U"):
+        try:
+            d = slack_api("users.info", {"user": uid})
+            u = d.get("user") or {}
+            p = u.get("profile") or {}
+            nm = p.get("display_name") or p.get("real_name") or u.get("name") or uid
+            NAME_CACHE[uid] = nm
+            return nm
+        except Exception:
+            pass
+    NAME_CACHE[uid] = uid
+    return uid
+
+def pretty_text(text):
+    text = text or ""
+    def sub_user(m):
+        return "@" + display_name(m.group(1))
+    def sub_team(m):
+        handle = m.group(2) or "devops-team"
+        return "@" + handle.lstrip("@")
+    text = re.sub(r"<@([UWS][A-Z0-9]+)(?:\|[^>]+)?>", sub_user, text)
+    text = re.sub(r"<!subteam\^([A-Z0-9]+)(?:\|@?([^>]+))?>", sub_team, text)
+    text = re.sub(r"<([^|>]+)\|([^>]+)>", r"\2", text)
+    return text
+
+def enrich_thread(channel, ts):
+    reactions, replies = [], []
+    if not BOT or not channel or not ts:
+        return reactions, replies
+    d = slack_api("conversations.replies", {"channel": channel, "ts": ts, "limit": "50"})
+    msgs = d.get("messages") or []
+    if msgs:
+        root = msgs[0]
+        for rx in root.get("reactions") or []:
+            users = [display_name(u) for u in (rx.get("users") or [])]
+            reactions.append({"name": rx.get("name"), "count": rx.get("count") or len(users), "users": users})
+        for m in msgs[1:]:
+            replies.append({
+                "ts": m.get("ts"),
+                "user": display_name(m.get("user") or ""),
+                "text": pretty_text(m.get("text") or ""),
+                "reactions": [
+                    {"name": r.get("name"), "count": r.get("count"), "users": [display_name(u) for u in (r.get("users") or [])]}
+                    for r in (m.get("reactions") or [])
+                ],
+            })
+    return reactions, replies
+
 def short_text(t, n=140):
     t = re.sub(r"<[^>]+>", " ", t or "")
     t = re.sub(r"\s+", " ", t).strip()
@@ -284,10 +349,16 @@ def short_text(t, n=140):
 def store_item(**kw):
     q("""INSERT INTO mentions.items
         (slack_ts, channel_id, channel_name, permalink, author_id, author_name,
-         mention_type, mentioned_id, mentioned, text_full, text_short, keywords, msg_at, day)
+         mention_type, mentioned_id, mentioned, text_full, text_short, keywords, msg_at, day,
+         reactions_json, replies_json, reply_count)
         VALUES (%(slack_ts)s,%(channel_id)s,%(channel_name)s,%(permalink)s,%(author_id)s,%(author_name)s,
-                %(mention_type)s,%(mentioned_id)s,%(mentioned)s,%(text_full)s,%(text_short)s,%(keywords)s,%(msg_at)s,%(day)s)
-        ON CONFLICT (slack_ts, channel_id, mentioned_id) DO NOTHING""", kw)
+                %(mention_type)s,%(mentioned_id)s,%(mentioned)s,%(text_full)s,%(text_short)s,%(keywords)s,%(msg_at)s,%(day)s,
+                %(reactions_json)s,%(replies_json)s,%(reply_count)s)
+        ON CONFLICT (slack_ts, channel_id, mentioned_id) DO UPDATE SET
+          text_full=EXCLUDED.text_full, text_short=EXCLUDED.text_short,
+          author_name=EXCLUDED.author_name, mentioned=EXCLUDED.mentioned,
+          reactions_json=EXCLUDED.reactions_json, replies_json=EXCLUDED.replies_json,
+          reply_count=EXCLUDED.reply_count""", kw)
 
 def ingest_message(ev, force_team=False):
     text = ev.get("text") or ""
@@ -317,11 +388,17 @@ def ingest_message(ev, force_team=False):
     kws = extract_kw(text)
     targets = [(typ, mid, name) for typ, mid, name in targets if allowed_mention(mid, name) or typ == "team"]
     for typ, mid, name in targets:
+        nice = pretty_text(text)
+        who = display_name(mid) if typ != "team" else "@devops-team"
+        rx, th = enrich_thread(cid, ts)
         store_item(
             slack_ts=ts, channel_id=cid, channel_name=chn, permalink=link,
-            author_id=uid, author_name=auth, mention_type=typ, mentioned_id=mid,
-            mentioned=name, text_full=text, text_short=short_text(text),
+            author_id=uid, author_name=display_name(uid) or auth, mention_type=typ, mentioned_id=mid,
+            mentioned=who, text_full=nice, text_short=short_text(nice),
             keywords=kws, msg_at=when, day=day,
+            reactions_json=json.dumps(rx, ensure_ascii=False),
+            replies_json=json.dumps(th, ensure_ascii=False),
+            reply_count=len(th),
         )
         n += 1
     return n

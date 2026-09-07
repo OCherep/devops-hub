@@ -50,8 +50,50 @@ def slack_api(method, payload):
         f"https://slack.com/api/{method}", data=data,
         headers={"Authorization": f"Bearer {BOT}", "Content-Type": "application/x-www-form-urlencoded"},
     )
-    with urllib.request.urlopen(req, timeout=15) as r:
+    with urllib.request.urlopen(req, timeout=20) as r:
         return json.loads(r.read().decode())
+
+def search_messages(query, count=50):
+    d = slack_api("search.messages", {"query": query, "count": str(count), "sort": "timestamp"})
+    matches = ((d.get("messages") or {}).get("matches") or [])
+    n = 0
+    for m in matches:
+        ev = {
+            "text": m.get("text") or "",
+            "channel": (m.get("channel") or {}).get("id") or "",
+            "ts": m.get("ts") or "",
+            "user": m.get("user") or "",
+        }
+        # channel name already in search hit
+        try:
+            n += ingest_message(ev)
+        except Exception as e:
+            print("ingest", e, flush=True)
+    return n, d.get("ok"), d.get("error")
+
+def backfill():
+    if not BOT:
+        return {"error": "no SLACK_BOT_TOKEN"}
+    total = 0
+    qlist = [
+        f"@{TEAM_GROUP}",
+        f"<@{TEAM_GROUP}>",
+        "to:devops-team",
+    ]
+    # roster names from DB if any
+    try:
+        rows = q("SELECT DISTINCT mentioned FROM mentions.items WHERE mention_type='user' LIMIT 40", fetch=True)
+        for r in rows:
+            if r["mentioned"]:
+                qlist.append("@" + r["mentioned"].split()[0])
+    except Exception:
+        pass
+    detail = []
+    for query in qlist:
+        n, ok, err = search_messages(query, 40)
+        total += n
+        detail.append({"q": query, "ingested": n, "ok": ok, "error": err})
+    return {"ingested": total, "queries": detail}
 
 def permalink(channel, ts):
     d = slack_api("chat.getPermalink", {"channel": channel, "message_ts": ts})
@@ -157,7 +199,12 @@ class H(BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         if path in ("/health", "/api/health"):
-            return self._json(200, {"ok": True})
+            return self._json(200, {"ok": True, "bot": bool(BOT)})
+        if path.endswith("/api/backfill"):
+            try:
+                return self._json(200, backfill())
+            except Exception as e:
+                return self._json(500, {"error": str(e)})
         if path in ("/api/mentions", "/mentions/api/mentions"):
             day = (qs.get("day") or [str(date.today())])[0]
             who = (qs.get("who") or [""])[0]
@@ -242,6 +289,18 @@ class H(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True})
         self._json(404, {"error": "not found"})
 
+def poll_loop():
+    import time as _t
+    _t.sleep(8)
+    while True:
+        try:
+            print("backfill", backfill(), flush=True)
+        except Exception as e:
+            print("backfill err", e, flush=True)
+        _t.sleep(300)
+
 if __name__ == "__main__":
-    print(f"mentions listening :{PORT}", flush=True)
+    print(f"mentions listening :{PORT} bot={bool(BOT)}", flush=True)
+    import threading
+    threading.Thread(target=poll_loop, daemon=True).start()
     ThreadingHTTPServer(("0.0.0.0", PORT), H).serve_forever()

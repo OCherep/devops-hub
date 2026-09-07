@@ -395,7 +395,7 @@ def ingest_message(ev, force_team=False):
         who = display_name(mid) if typ != "team" else "@devops-team"
         rx, th = enrich_thread(cid, ts)
         store_item(
-            slack_ts=ts, channel_id=cid, channel_name=chn, permalink=link,
+            slack_ts=ts, channel_id=cid, channel_name=channel_name(cid, chn), permalink=link,
             author_id=uid, author_name=display_name(uid) or auth, mention_type=typ, mentioned_id=mid,
             mentioned=who, text_full=nice, text_short=short_text(nice),
             keywords=kws, msg_at=when, day=day,

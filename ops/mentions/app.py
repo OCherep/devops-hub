@@ -82,7 +82,7 @@ def keywords():
 
 
 def refresh_oncall_roster():
-    """Load slack_id + names from OnCall team_members into mentions.roster."""
+    """Replace mentions.roster with OnCall /api/data team_members only."""
     import datetime as dt
     now = dt.date.today()
     url = f"{ONCALL_API.rstrip('/')}/api/data?year={now.year}&month={now.month}"
@@ -93,19 +93,17 @@ def refresh_oncall_roster():
     except Exception as e:
         print("oncall roster", e, flush=True)
         return []
-    members = data.get("team_members") or data.get("users") or []
-    out = []
-    keep_ids = []
+    members = data.get("team_members") or []
+    names = []
+    try:
+        q("DELETE FROM mentions.roster WHERE COALESCE(is_team,false)=false")
+    except Exception as e:
+        print("roster wipe", e, flush=True)
     for m in members:
-        team = str(m.get("team") or m.get("team_name") or "")
-        if team and "devops" not in team.lower():
-            continue
-        sid = (m.get("slack_id") or m.get("slack") or "").strip()
         name = (m.get("name") or m.get("username") or "").strip()
         uname = (m.get("username") or "").strip()
-        if (name or "").lower() == "admin":
-            continue
-        if not name:
+        sid = (m.get("slack_id") or m.get("slack") or "").strip()
+        if not name or name.lower() == "admin":
             continue
         key = sid or ("name:"+name)
         try:
@@ -115,20 +113,17 @@ def refresh_oncall_roster():
               (key, name, uname))
         except Exception as e:
             print("roster upsert", e, flush=True)
-        keep_ids.append(key)
-        out.append({"slack_id": sid, "name": name, "username": uname})
-    if keep_ids:
-        q("DELETE FROM mentions.roster WHERE is_team=false AND slack_id <> ALL(%s)", (keep_ids,))
-    # team handle
+        names.append({"slack_id": sid, "name": name, "username": uname})
+    print("roster oncall", len(names), "from", url, flush=True)
     try:
         q("""INSERT INTO mentions.roster (slack_id, name, username, is_team)
              VALUES (%s,%s,%s,true)
-             ON CONFLICT (slack_id) DO NOTHING""",
-          ("S03QEQF27AN", TEAM_GROUP, TEAM_GROUP))
+             ON CONFLICT (slack_id) DO UPDATE SET name=EXCLUDED.name, is_team=true""",
+          ("S03QEQF27AN", "@devops-team", "devops-team"))
     except Exception:
         pass
-    print("roster", len(out), flush=True)
-    return out
+    return names
+
 
 def roster_allow():
     rows = []

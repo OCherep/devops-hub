@@ -96,7 +96,7 @@ def refresh_oncall_roster():
     members = data.get("team_members") or []
     names = []
     try:
-        q("DELETE FROM mentions.roster WHERE COALESCE(is_team,false)=false")
+        q("DELETE FROM mentions.roster")
     except Exception as e:
         print("roster wipe", e, flush=True)
     for m in members:
@@ -488,7 +488,12 @@ class H(BaseHTTPRequestHandler):
                 sql += " AND (mentioned ILIKE %s OR mentioned_id=%s)"
                 args += [f"%{who}%", who]
             if not hist:
-                sql += " AND (day=%s OR (mention_type='team' AND COALESCE(reply_count,0)=0 AND msg_at < NOW() - INTERVAL '10 hours'))"
+                sql += """ AND (day=%s OR (
+                    mention_type='team' AND COALESCE(reply_count,0)=0
+                    AND COALESCE(reactions_json,'[]') IN ('[]','null','')
+                    AND msg_at < NOW() - INTERVAL '10 hours'
+                    AND msg_at >= NOW() - INTERVAL '7 days'
+                ))"""
                 args.append(day)
             else:
                 sql += " AND day>=%s::date - 14"; args.append(day)
@@ -496,7 +501,7 @@ class H(BaseHTTPRequestHandler):
             if author:
                 sql += " AND author_name=%s"
                 args.append(author)
-            sql += " ORDER BY msg_at DESC LIMIT 500"
+            sql += " ORDER BY channel_name ASC, msg_at DESC LIMIT 500"
             try:
                 rows = q(sql, args, fetch=True)
             except Exception as e:

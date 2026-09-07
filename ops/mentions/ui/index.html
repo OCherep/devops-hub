@@ -46,7 +46,7 @@ header.top{display:flex;justify-content:space-between;align-items:center;padding
   <table><thead><tr><th>Хто</th><th>Тип</th><th>Сьогодні</th><th>Останнє</th><th>Лінк</th></tr></thead>
     <tbody id="people"></tbody></table>
   <h2 id="list-title">Усі згадки</h2>
-  <table><thead><tr><th></th><th>Час</th><th>Чат</th><th>Кому</th><th>Повідомлення</th><th>Slack</th></tr></thead>
+  <table><thead><tr><th></th><th>Час</th><th>Чат</th><th>Автор</th><th>Кому</th><th>Повідомлення</th><th>↩ / ☺</th><th>Slack</th></tr></thead>
     <tbody id="rows"></tbody></table>
 </main>
 <script src="/theme.js"></script>
@@ -61,18 +61,27 @@ function qs(){
   const h=document.getElementById("hist").checked?"1":"0";
   return "day="+dayEl.value+"&history="+h+(filterWho?"&who="+encodeURIComponent(filterWho):"");
 }
+function rxHtml(rx){
+  rx=Array.isArray(rx)?rx:(function(){try{return JSON.parse(rx||"[]")}catch(e){return []}})();
+  return rx.map(r=>":"+(r.name||"")+": "+(r.count||0)+((r.users&&r.users.length)?" ("+r.users.join(", ")+")":"")).join(" · ");
+}
 function renderItems(items){
   items=items||[];
   if(filterKw) items=items.filter(i=>(i.keywords||[]).indexOf(filterKw)>=0);
   const el=document.getElementById("rows");
-  if(!items.length){ el.innerHTML='<tr><td colspan="6" class="muted">Порожньо</td></tr>'; return; }
-  el.innerHTML=items.map((i,idx)=>'<tr data-i="'+idx+'"><td>+</td><td class="mono">'
-    +String(i.msg_at||"").replace("T"," ").slice(0,19)+'</td><td>#'+(i.channel_name||i.channel_id||"")
-    +'</td><td>'+(i.mentioned||"")+' <span class="muted">'+(i.mention_type||"")+'</span></td><td>'
-    +(i.text_short||"").replace(/</g,"&lt;")+'</td><td>'
-    +(i.permalink?'<a href="'+i.permalink+'" target="_blank">msg</a>':'—')+'</td></tr>'
-    +'<tr class="exp" id="full-'+idx+'" style="display:none"><td colspan="6"><pre style="white-space:pre-wrap">'
-    +(i.text_full||"").replace(/</g,"&lt;")+'</pre></td></tr>').join("");
+  if(!items.length){ el.innerHTML='<tr><td colspan="8" class="muted">Порожньо</td></tr>'; return; }
+  el.innerHTML=items.map(function(i,idx){
+    const rx=rxHtml(i.reactions_json||i.reactions);
+    let replies=[]; try{replies=typeof i.replies_json==="string"?JSON.parse(i.replies_json||"[]"):(i.replies_json||[])}catch(e){}
+    const badge=(i.reply_count||replies.length||0)+"↩"+(rx?" · ☺":"");
+    const thread=replies.map(r=>'<div class="muted" style="margin:6px 0 0 12px"><b>'+(r.user||"")+'</b> '+(r.text||"")+(r.reactions&&r.reactions.length?" · "+rxHtml(r.reactions):"")+"</div>").join("");
+    return '<tr data-i="'+idx+'"><td>+</td><td class="mono">'+String(i.msg_at||"").replace("T"," ").slice(0,19)
+      +"</td><td>#"+(i.channel_name||i.channel_id||"")+"</td><td>"+(i.author_name||"—")+"</td><td>"+(i.mentioned||"")
+      +'</td><td>'+(i.text_short||"").replace(/</g,"&lt;")+"</td><td>"+badge+'</td><td>'
+      +(i.permalink?'<a href="'+i.permalink+'" target="_blank">msg</a>':"—")+"</td></tr>"
+      +'<tr class="exp" id="full-'+idx+'" style="display:none"><td colspan="8"><pre style="white-space:pre-wrap">'
+      +(i.text_full||"").replace(/</g,"&lt;")+"</pre><div>"+rx+"</div>"+thread+"</td></tr>";
+  }).join("");
   el.onclick=function(e){
     const tr=e.target.closest("tr[data-i]"); if(!tr) return;
     const n=document.getElementById("full-"+tr.dataset.i);

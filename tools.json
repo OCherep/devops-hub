@@ -1,6 +1,6 @@
 {
   "version": "1.1.2",
-  "updated": "2026-09-05",
+  "updated": "2026-09-07",
   "owner": "platform / SRE",
   "deploy": {
     "layout": "/opt/ops",
@@ -116,6 +116,21 @@
       "tags": [
         "metrics",
         "delivery"
+      ]
+    },
+    {
+      "id": "slack-mentions",
+      "title": "Slack Mentions",
+      "status": "beta",
+      "blurb": "Згадки @devops-team і членів команди у Slack. Postgres mentions.*",
+      "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/mentions",
+      "live": "https://s.ks.tv/mentions/",
+      "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/mentions/README.md",
+      "ops_dir": "/opt/ops/mentions",
+      "tags": [
+        "slack",
+        "ops",
+        "mentions"
       ]
     }
   ]

@@ -95,22 +95,30 @@ def refresh_oncall_roster():
         return []
     members = data.get("team_members") or data.get("users") or []
     out = []
+    keep_ids = []
     for m in members:
-        if m.get("show_in_roster") is False:
+        team = str(m.get("team") or m.get("team_name") or "")
+        if team and "devops" not in team.lower():
             continue
         sid = (m.get("slack_id") or m.get("slack") or "").strip()
         name = (m.get("name") or m.get("username") or "").strip()
         uname = (m.get("username") or "").strip()
-        if not name and not sid:
+        if (name or "").lower() == "admin":
             continue
+        if not name:
+            continue
+        key = sid or ("name:"+name)
         try:
             q("""INSERT INTO mentions.roster (slack_id, name, username, is_team)
                  VALUES (%s,%s,%s,false)
                  ON CONFLICT (slack_id) DO UPDATE SET name=EXCLUDED.name, username=EXCLUDED.username""",
-              (sid or name, name, uname))
+              (key, name, uname))
         except Exception as e:
             print("roster upsert", e, flush=True)
+        keep_ids.append(key)
         out.append({"slack_id": sid, "name": name, "username": uname})
+    if keep_ids:
+        q("DELETE FROM mentions.roster WHERE is_team=false AND slack_id <> ALL(%s)", (keep_ids,))
     # team handle
     try:
         q("""INSERT INTO mentions.roster (slack_id, name, username, is_team)

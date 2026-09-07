@@ -100,7 +100,7 @@ function renderItems(items){
 dayEl.onchange=load; document.getElementById('hist').onchange=load;
 document.getElementById('bf').onclick=async()=>{
   const s=document.getElementById('bfst'); s.textContent='пошук…';
-  try{const d=await fetch(API+'/backfill').then(r=>r.json()); s.textContent='додано '+(d.ingested||0)+(d.error?(' · '+d.error):''); load();}
+  try{const d=await fetch(API+'/backfill').then(r=>r.json()); s.textContent='додано '+(d.ingested||0)+' · '+(d.error||JSON.stringify(d.queries||d.group||{})); load();}
   catch(e){s.textContent=String(e)}
 };
 load();

@@ -53,59 +53,57 @@ def slack_api(method, payload):
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.loads(r.read().decode())
 
-def search_messages(query, count=50, force_team=False):
-    d = slack_api("search.messages", {"query": query, "count": str(count), "sort": "timestamp", "sort_dir": "desc"})
-    if not d.get("ok"):
-        return 0, False, d.get("error") or "search_failed", 0
-    matches = ((d.get("messages") or {}).get("matches") or [])
-    n = 0
-    for m in matches:
-        ev = {
-            "text": m.get("text") or m.get("previous") or "",
-            "channel": (m.get("channel") or {}).get("id") or "",
-            "ts": m.get("ts") or "",
-            "user": m.get("user") or "",
-        }
-        chname = (m.get("channel") or {}).get("name") or ""
-        try:
-            added = ingest_message(ev, force_team=force_team or bool(chname))
-            if added == 0 and ev["text"]:
-                added = ingest_message({**ev, "text": ev["text"] + f" @{TEAM_GROUP}"}, force_team=True)
-            n += added
-        except Exception as e:
-            print("ingest", e, flush=True)
-    return n, True, None, len(matches)
+def list_bot_channels():
+    chans = []
+    cursor = ""
+    for typ in ("public_channel,private_channel",):
+        cursor = ""
+        while True:
+            payload = {"types": "public_channel,private_channel", "limit": "200", "exclude_archived": "true"}
+            if cursor:
+                payload["cursor"] = cursor
+            d = slack_api("conversations.list", payload)
+            if not d.get("ok"):
+                return chans, d.get("error")
+            for c in d.get("channels") or []:
+                if c.get("is_member") or c.get("is_private"):
+                    chans.append({"id": c.get("id"), "name": c.get("name")})
+            cursor = ((d.get("response_metadata") or {}).get("next_cursor") or "")
+            if not cursor:
+                break
+    return chans, None
 
-def team_group_id():
-    d = slack_api("usergroups.list", {"include_users": "false"})
-    for g in d.get("usergroups") or []:
-        handle = (g.get("handle") or "").lower()
-        name = (g.get("name") or "").lower()
-        if handle in (TEAM_GROUP.lower(), "devops-team") or "devops" in handle or "devops" in name:
-            return g.get("id"), g.get("handle") or TEAM_GROUP
-    return "", TEAM_GROUP
+def history_channel(cid, limit=80):
+    d = slack_api("conversations.history", {"channel": cid, "limit": str(limit)})
+    return d.get("messages") or [], d.get("ok"), d.get("error")
 
 def backfill():
     if not BOT:
         return {"error": "no SLACK_BOT_TOKEN"}
-    gid, handle = team_group_id()
-    total = 0
-    qlist = [
-        f"@{handle}",
-        "has:@devops-team",
-        "has:mention devops",
-    ]
-    if gid:
-        qlist.insert(0, f"<@subteam^{gid}>")
-        qlist.insert(0, gid)
-    detail = []
-    for query in qlist:
-        n, ok, err, hits = search_messages(query, 50, force_team=True)
-        total += n
-        detail.append({"q": query, "ingested": n, "hits": hits, "ok": ok, "error": err})
-        if n:
-            break
-    return {"ingested": total, "group": {"id": gid, "handle": handle}, "queries": detail}
+    chans, err = list_bot_channels()
+    if err and not chans:
+        return {"error": err, "ingested": 0}
+    total, scanned, detail = 0, 0, []
+    for ch in chans[:80]:
+        msgs, ok, e = history_channel(ch["id"])
+        scanned += 1
+        if not ok:
+            detail.append({"ch": ch.get("name"), "error": e})
+            continue
+        got = 0
+        for m in msgs:
+            if m.get("subtype"):
+                continue
+            ev = {"text": m.get("text") or "", "channel": ch["id"], "ts": m.get("ts") or "", "user": m.get("user") or ""}
+            try:
+                got += ingest_message(ev, force_team=False)
+            except Exception as ex:
+                print("ingest", ex, flush=True)
+        total += got
+        if got:
+            detail.append({"ch": ch.get("name"), "ingested": got, "msgs": len(msgs)})
+    return {"ingested": total, "channels": len(chans), "scanned": scanned, "detail": detail[:30], "note": "bot token cannot use search.messages; scanned conversations.history"}
+
 
 def permalink(channel, ts):
     d = slack_api("chat.getPermalink", {"channel": channel, "message_ts": ts})

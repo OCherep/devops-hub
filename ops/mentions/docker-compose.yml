@@ -10,6 +10,7 @@ services:
       SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
       SLACK_DEVOPS_GROUP: ${SLACK_DEVOPS_GROUP:-devops-team}
       PORT: "8091"
+      ONCALL_API: ${ONCALL_API:-http://oncall_nginx_5}
     networks: [opsnet]
     volumes:
       - ./ui:/app/ui:ro

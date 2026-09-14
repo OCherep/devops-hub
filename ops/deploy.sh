@@ -93,6 +93,13 @@ else
 fi
 up "$OPS/ether" --build
 up "$OPS/mentions" --build --force-recreate
+cp -a "$OPS/hub/ops/netmap/app.py" "$OPS/netmap/" 2>/dev/null || true
+cp -a "$OPS/hub/ops/netmap/Dockerfile" "$OPS/netmap/" 2>/dev/null || true
+cp -a "$OPS/hub/ops/netmap/docker-compose.yml" "$OPS/netmap/" 2>/dev/null || true
+cp -a "$OPS/hub/ops/netmap/ui/." "$OPS/netmap/ui/" 2>/dev/null || true
+keep_env "$OPS/netmap/.env" /tmp/netmap.env.bak 2>/dev/null || true
+restore_env "$OPS/netmap/.env" /tmp/netmap.env.bak 2>/dev/null || true
+up "$OPS/netmap" --build --force-recreate
 up "$OPS/oncall"
 up "$OPS/edge" --force-recreate
 
@@ -100,6 +107,7 @@ echo "== health (opsnet, без hairpin) =="
 docker exec ops_edge wget -qO- -T 3 http://oncall_nginx_5/api/on-grid >/dev/null 2>&1 && echo "oncall: OK" || echo "oncall: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_hub/tools.json >/dev/null 2>&1 && echo "hub: OK" || echo "hub: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_mentions:8091/health >/dev/null 2>&1 && echo "mentions: OK" || echo "mentions: FAIL"
+docker exec ops_edge wget -qO- -T 3 http://ops_netmap:8092/health >/dev/null 2>&1 && echo "netmap: OK" || echo "netmap: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_ether/ether/ >/dev/null 2>&1 && echo "ether: OK" || echo "ether: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_certs_ui/ >/dev/null 2>&1 && echo "certs: OK" || echo "certs: FAIL"
 

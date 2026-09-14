@@ -1,6 +1,6 @@
 {
   "version": "1.1.4",
-  "updated": "2026-09-07",
+  "updated": "2026-09-14",
   "owner": "platform / SRE",
   "deploy": {
     "layout": "/opt/ops",
@@ -10,6 +10,18 @@
     "docs": "ops/DEPLOY.md"
   },
   "tools": [
+    {
+      "id": "netmap",
+      "title": "Netmap",
+      "status": "beta",
+      "blurb": "Інвентар хостів по allowlist CIDR, nmap -sn, граф. Без CVE/pcap.",
+      "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/netmap",
+      "live": "https://s.ks.tv/netmap/",
+      "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/netmap/README.md",
+      "ops_dir": "/opt/ops/netmap",
+      "tags": ["network", "nmap", "inventory", "ops"]
+    },
+
     {
       "id": "oncall-system",
       "title": "OnCall System",

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="uk" data-hub-service="netmap">
+<script>document.documentElement.setAttribute("data-theme",(function(){try{var m=localStorage.getItem("ops_theme")||"dark";if(m==="light"||m==="dark")return m;return matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){return"dark"}})());</script>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Netmap · DevOps Hub</title>
+<link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/chrome.css">
+<style>
+body{margin:0;background:var(--bg,#0b1020);color:var(--text,#e8eefc);font:15px/1.45 system-ui,sans-serif}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border,#243056)}
+main{max-width:1100px;margin:24px auto;padding:0 16px 48px}
+.muted{color:var(--muted,#9aa8c7);font-size:13px}
+.btn{background:#243056;color:#e8eefc;border:0;border-radius:8px;padding:6px 10px;cursor:pointer}
+input{background:#151b2e;color:#e8eefc;border:1px solid #2a3554;border-radius:6px;padding:6px 8px}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #243056;font-size:13px}
+.mono{font-family:ui-monospace,monospace}
+#graph{height:360px;border:1px solid #243056;border-radius:10px;margin:12px 0;background:#0e1428}
+.warn{color:#fbbf24}
+</style>
+</head>
+<body>
+<header class="top">
+  <strong>Netmap</strong>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="theme-switch">
+      <button type="button" data-theme-btn="system" onclick="opsSetTheme('system')">Авто</button>
+      <button type="button" data-theme-btn="light" onclick="opsSetTheme('light')">☀</button>
+      <button type="button" data-theme-btn="dark" onclick="opsSetTheme('dark')">☾</button>
+    </div>
+    <span id="hub-date-chip" class="date-chip"></span>
+    <button class="btn" id="hub-login-btn">Увійти</button><span id="hub-who"></span>
+    <div class="nav-dd"><button class="btn" type="button" onclick="document.getElementById('hub-tools-menu').classList.toggle('open')">Інструменти ▾</button>
+      <div id="hub-tools-menu" class="nav-menu"></div></div>
+  </div>
+</header>
+<main>
+  <p class="muted">Інвентар хостів по allowlist CIDR. Лише ваші мережі. Без CVE/pcap. nmap -sn (TCP ping).</p>
+  <p>
+    <input id="cidr" placeholder="10.0.0.0/24" size="16">
+    <input id="label" placeholder="vpc / mgmt" size="14">
+    <button class="btn" id="add">Додати CIDR</button>
+    <button class="btn" id="scan">Сканувати allowlist</button>
+    <span id="st" class="muted"></span>
+  </p>
+  <p id="cidrs" class="muted"></p>
+  <div id="graph"></div>
+  <h2>Хости</h2>
+  <table><thead><tr><th>IP</th><th>Імʼя</th><th>MAC</th><th>Vendor</th><th>CIDR</th><th>Last seen</th></tr></thead>
+  <tbody id="rows"></tbody></table>
+</main>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="/theme.js"></script>
+<script src="/chrome.js"></script>
+<script>
+const API="/netmap/api";
+async function j(url,opt){const r=await fetch(url,opt); const t=await r.text(); return t?JSON.parse(t):{};}
+async function load(){
+  const c=await j(API+"/cidrs");
+  document.getElementById("cidrs").textContent=(c.cidrs||[]).map(x=>x.cidr+(x.label?" ("+x.label+")":"")).join(" · ")||"allowlist порожній — додайте CIDR";
+  const h=await j(API+"/hosts");
+  document.getElementById("rows").innerHTML=(h.hosts||[]).map(x=>"<tr><td class=mono>"+x.ip+"</td><td>"+(x.hostname||"—")+"</td><td class=mono>"+(x.mac||"—")+"</td><td>"+(x.vendor||"—")+"</td><td class=mono>"+(x.cidr||"—")+"</td><td class=mono>"+String(x.last_seen||"").replace("T"," ").slice(0,19)+"</td></tr>").join("")||"<tr><td colspan=6 class=muted>Порожньо — скануйте allowlist</td></tr>";
+  const g=await j(API+"/graph");
+  if(window.vis && g.nodes){
+    const data={nodes:new vis.DataSet(g.nodes), edges:new vis.DataSet(g.edges||[])};
+    new vis.Network(document.getElementById("graph"), data, {physics:{stabilization:true}, nodes:{shape:"dot", size:14, font:{color:"#c5d4ff"}, color:{background:"#3b82f6",border:"#93c5fd"}}});
+  }
+}
+document.getElementById("add").onclick=async()=>{
+  const d=await j(API+"/cidrs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cidr:cidr.value,label:label.value})});
+  st.textContent=d.error||"ok"; load();
+};
+document.getElementById("scan").onclick=async()=>{
+  st.textContent="скан…";
+  await j(API+"/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+  for(let i=0;i<30;i++){
+    await new Promise(r=>setTimeout(r,2000));
+    const s=await j(API+"/scan/status");
+    if(s.status!=="running"){ st.textContent=JSON.stringify(s.result||s).slice(0,180); break; }
+  }
+  load();
+};
+load();
+</script>
+</body></html>

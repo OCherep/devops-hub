@@ -54,6 +54,16 @@
 		}
 	}
 
+	redir /netmap /netmap/ 308
+	handle_path /netmap/* {
+		reverse_proxy ops_netmap:8092 {
+			transport http {
+				dial_timeout 3s
+				read_timeout 60s
+			}
+		}
+	}
+
 	redir /ether /ether/ 308
 	# Ether is SSR (TanStack / Nitro). Do NOT strip — app base is /ether/.
 	# Radar keeps handle_path because it is static with relative URLs.

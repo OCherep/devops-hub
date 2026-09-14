@@ -1,0 +1,24 @@
+services:
+  netmap:
+    build: .
+    image: ops-netmap
+    container_name: ops_netmap
+    restart: always
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: "8092"
+      DATABASE_URL: ${DATABASE_URL:-postgres://ops:ops-change-me@ops_postgres:5432/platform}
+      NETMAP_CIDRS: ${NETMAP_CIDRS:-}
+      NETMAP_MAX_HOSTS: ${NETMAP_MAX_HOSTS:-256}
+    volumes:
+      - ./ui:/app/ui:ro
+    expose:
+      - "8092"
+    networks:
+      - opsnet
+networks:
+  opsnet:
+    external: true
+    name: opsnet

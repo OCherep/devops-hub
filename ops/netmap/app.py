@@ -114,17 +114,45 @@ def parse_nmap(xml):
         hosts.append({"ip": ip, "mac": mac, "hostname": hn, "vendor": vendor, "ports": ports})
     return hosts
 
+def local_ips():
+    out = []
+    try:
+        p = subprocess.run(["hostname", "-I"], capture_output=True, text=True, timeout=5)
+        out += [x for x in (p.stdout or "").split() if ":" not in x]
+    except Exception:
+        pass
+    try:
+        p = subprocess.run(["ip", "-4", "-o", "addr"], capture_output=True, text=True, timeout=5)
+        for m in re.finditer(r"inet (\d+\.\d+\.\d+\.\d+)", p.stdout or ""):
+            out.append(m.group(1))
+    except Exception:
+        pass
+    return sorted(set(out))
+
 def run_nmap(cidr):
     net = ipaddress.ip_network(cidr, strict=False)
     if net.num_addresses > MAX_HOSTS + 2:
         raise RuntimeError(f"CIDR {cidr} too large (max {MAX_HOSTS} hosts)")
-    # connect-scan friendly: no raw sockets required
-    cmd = ["nmap", "-sn", "-n", "-PS22,80,443,8080,8084,8085", "-oX", "-", str(net)]
-    p = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    # Unprivileged container: ICMP/ARP недоступні. Шукаємо TCP connect.
+    cmd = [
+        "nmap", "-T4", "--max-retries", "1", "--host-timeout", "4s",
+        "-sT", "-p", "22,53,80,443,8080,8084,8085,8443,9100",
+        "-oX", "-", str(net),
+    ]
+    p = subprocess.run(cmd, capture_output=True, text=True, timeout=240)
     xml = p.stdout or ""
+    note = (p.stderr or "")[-800:]
     if p.returncode not in (0, 1) and not xml:
-        raise RuntimeError(p.stderr[-400:] or "nmap failed")
-    return parse_nmap(xml), (p.stderr or "")[-500:]
+        raise RuntimeError(note or "nmap failed")
+    hosts = parse_nmap(xml)
+    # завжди фіксуємо локальні адреси контейнера/хоста в CIDR
+    for ip in local_ips():
+        try:
+            if ipaddress.ip_address(ip) in net and not any(h["ip"] == ip for h in hosts):
+                hosts.append({"ip": ip, "mac": "", "hostname": "self", "vendor": "netmap-container", "ports": []})
+        except Exception:
+            pass
+    return hosts, f"cmd={' '.join(cmd)} rc={p.returncode} parsed={len(hosts)} stderr={note}"
 
 def do_scan(cidr=None):
     nets, rows = allowed_cidrs()

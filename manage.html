@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="uk" data-hub-service="hub">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Керування · DevOps Hub</title>
+<link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="chrome.css">
+<style>
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:8px;border-bottom:1px solid var(--border,#243056)}
+code{font-size:12px}
+</style>
+</head>
+<body>
+<header class="header"><div class="brand"><strong>DevOps Hub</strong> · керування</div>
+<nav class="nav"><a href="/">На хаб</a></nav></header>
+<main style="max-width:960px;margin:24px auto;padding:0 16px">
+<p class="muted">Контейнери з <code>status.json</code> (пише Ansible role status). Start/stop з браузера немає — Docker socket не у мережу.</p>
+<p id="gen" class="muted"></p>
+<table><thead><tr><th>Контейнер</th><th>Стан</th><th>Порти</th></tr></thead><tbody id="rows"></tbody></table>
+<h2>Ролі Ansible</h2>
+<pre class="code">ansible-playbook -i inventory.yml site.yml --tags postgres,hub,caddy,status
+ansible-playbook -i inventory.yml site.yml --tags oncall   # тільки якщо є .env
+ansible-playbook -i inventory.yml site.yml --tags mentions,netmap,certs,inventory</pre>
+</main>
+<script>
+fetch('status.json').then(r=>r.ok?r.json():Promise.reject()).then(s=>{
+  gen.textContent='згенеровано '+ (s.generated||'')+' host '+(s.host||'');
+  const raw=s.raw||[];
+  rows.innerHTML=raw.map(line=>{
+    let o={}; try{o=typeof line==='string'?JSON.parse(line):line}catch(e){return '';}
+    return '<tr><td>'+(o.Names||o.names||'')+'</td><td>'+(o.Status||o.status||'')+'</td><td>'+(o.Ports||o.ports||'')+'</td></tr>';
+  }).join('')||'<tr><td colspan=3>немає status.json — запустіть role status</td></tr>';
+}).catch(()=>{rows.innerHTML='<tr><td colspan=3>status.json ще немає</td></tr>'});
+</script>
+</body></html>

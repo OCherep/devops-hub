@@ -1,6 +1,6 @@
 {
-  "version": "1.1.4",
-  "updated": "2026-09-14",
+  "version": "1.1.5",
+  "updated": "2026-09-17",
   "owner": "platform / SRE",
   "deploy": {
     "layout": "/opt/ops",
@@ -16,151 +16,121 @@
       "status": "beta",
       "blurb": "Інвентар хостів по allowlist CIDR, nmap -sn, граф. Без CVE/pcap.",
       "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/netmap",
-      "live": "https://s.ks.tv/netmap/",
+      "live": "/netmap/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/netmap/README.md",
       "ops_dir": "/opt/ops/netmap",
       "tags": ["network", "nmap", "inventory", "ops"]
     },
-
     {
       "id": "oncall-system",
       "title": "OnCall System",
       "status": "active",
-      "blurb": "Чергування, відсутності, звернення і дейлі-задачі. Docker-only. Host port 85.",
+      "blurb": "Чергування, відсутності, звернення і дейлі-задачі. Docker-only.",
       "repo": "https://github.com/OCherep/oncall-system",
       "branch": "https://github.com/OCherep/oncall-system/tree/grok-1.0.0",
-      "live": "https://s.ks.tv:85/",
+      "live": "/oncall/",
       "docs": "https://github.com/OCherep/oncall-system/blob/grok-1.0.0/docs/API.md",
       "ops_dir": "/opt/ops/oncall",
-      "tags": [
-        "ops",
-        "sre",
-        "on-call",
-        "incidents",
-        "go"
-      ]
+      "tags": ["ops", "sre", "on-call", "incidents", "go"]
     },
     {
       "id": "kstv-tech-radar",
       "title": "KSTV Tech Radar",
       "status": "beta",
-      "blurb": "Tech portfolio: ADOPT / TRIAL / ASSESS / HOLD. ArchUnit, DORA, Jira proposals.",
+      "blurb": "Tech portfolio: ADOPT / TRIAL / ASSESS / HOLD.",
       "repo": "https://github.com/OCherep/kstv-tech_radar",
-      "branch": "https://github.com/OCherep/kstv-tech_radar/tree/grok-0.0.1",
-      "live": "https://s.ks.tv/radar/",
+      "live": "/radar/",
       "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/METRICS.md",
       "ops_dir": "/opt/ops/radar",
-      "tags": [
-        "architecture",
-        "radar",
-        "governance",
-        "java"
-      ]
+      "tags": ["architecture", "radar", "governance"]
     },
     {
       "id": "certs-tls",
       "title": "Certificates SSL/TLS",
       "status": "beta",
-      "blurb": "Інвентар SSL/TLS, ZeroSSL/LE renew, Postgres certs.inventory. UI /certs/.",
+      "blurb": "Інвентар SSL/TLS, ZeroSSL/LE renew.",
       "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/certs",
-      "branch": "https://github.com/OCherep/devops-hub/tree/main/ops/certs",
-      "live": "https://s.ks.tv/certs/",
+      "live": "/certs/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/certs/README.md",
       "ops_dir": "/opt/ops/certs",
-      "tags": [
-        "tls",
-        "zerossl",
-        "acm",
-        "ops"
-      ]
+      "tags": ["tls", "zerossl", "acm", "ops"]
     },
     {
       "id": "devops-hub",
       "title": "DevOps Hub",
       "status": "active",
-      "blurb": "Єдина перша сторінка + warm deploy layout (/opt/ops, opsnet, edge).",
+      "blurb": "Єдина перша сторінка + warm deploy layout.",
       "repo": "https://github.com/OCherep/devops-hub",
-      "live": "https://s.ks.tv/",
+      "live": "/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/DEPLOY.md",
       "ops_dir": "/opt/ops/hub",
-      "tags": [
-        "portal",
-        "ops"
-      ]
+      "tags": ["portal", "ops"]
+    },
+    {
+      "id": "aws-inventory",
+      "title": "AWS Inventory",
+      "status": "beta",
+      "blurb": "Read-only інвентар AWS-акаунтів, теги, CloudWatch. Instance role.",
+      "repo": "https://github.com/OCherep/aws-inventory",
+      "live": "/aws/",
+      "docs": "https://github.com/OCherep/aws-inventory/blob/main/docs/HUB.md",
+      "ops_dir": "/opt/ops/awsinv",
+      "tags": ["aws", "inventory", "ops"]
     },
     {
       "id": "runbooks-portal",
       "title": "Runbooks Portal",
       "status": "planned",
-      "blurb": "Каталог runbook’ів; модуль через /opt/ops/_template → add-module.sh.",
+      "blurb": "Каталог runbook’ів.",
       "repo": null,
       "live": null,
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/_template/README.md",
       "ops_dir": "/opt/ops/runbooks",
-      "tags": [
-        "ops",
-        "docs"
-      ]
+      "tags": ["ops", "docs"]
     },
     {
       "id": "service-catalog",
       "title": "Service Catalog",
       "status": "planned",
-      "blurb": "Реєстр сервісів VidMind/KSTV: owners, tier, repo — міст Radar ↔ OnCall.",
+      "blurb": "Реєстр сервісів VidMind/KSTV.",
       "repo": null,
       "live": null,
       "docs": null,
       "ops_dir": "/opt/ops/service-catalog",
-      "tags": [
-        "catalog",
-        "ownership"
-      ]
+      "tags": ["catalog", "ownership"]
     },
     {
       "id": "dora-dashboard",
       "title": "DORA Dashboard",
       "status": "planned",
-      "blurb": "DF / lead time / CFR / recovery. Див. kstv-tech_radar docs/DORA.md.",
+      "blurb": "DF / lead time / CFR / recovery.",
       "repo": null,
       "live": null,
-      "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/DORA.md",
+      "docs": null,
       "ops_dir": "/opt/ops/dora-dashboard",
-      "tags": [
-        "metrics",
-        "delivery"
-      ]
+      "tags": ["metrics", "delivery"]
     },
     {
       "id": "slack-mentions",
       "title": "Slack Mentions",
       "status": "beta",
-      "blurb": "Згадки @devops-team і членів команди у Slack. Postgres mentions.*",
+      "blurb": "Згадки @devops-team у Slack.",
       "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/mentions",
-      "live": "https://s.ks.tv/mentions/",
+      "live": "/mentions/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/mentions/README.md",
       "ops_dir": "/opt/ops/mentions",
-      "tags": [
-        "slack",
-        "ops",
-        "mentions"
-      ]
+      "tags": ["slack", "ops", "mentions"]
     },
     {
       "id": "ether",
       "title": "Ефір",
       "status": "beta",
-      "blurb": "Control plane overlay на opsnet (Docker/Nitro, path /ether/). Очі, конектори, CI/CD смуги. Не SoT. Join service=ether. Не на шляху абонента.",
+      "blurb": "Control plane overlay на opsnet.",
       "repo": "https://github.com/OCherep/ether",
-      "branch": "https://github.com/OCherep/ether/tree/grok-0.0.1",
-      "live": "https://s.ks.tv/ether/",
+      "live": "/ether/",
       "docs": "https://github.com/OCherep/ether/blob/grok-0.0.1/docs/devops-hub.md",
       "ops_dir": "/opt/ops/ether",
-      "tags": [
-        "ops",
-        "sre",
-        "overlay",
-        "control-plane"
-      ]
+      "tags": ["ops", "sre", "overlay"]
     }
   ]
 }

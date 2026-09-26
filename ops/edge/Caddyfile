@@ -71,6 +71,16 @@
 		reverse_proxy ops_ether:80
 	}
 
+	redir /live-wall /live-wall/ 308
+	handle_path /live-wall/* {
+		reverse_proxy ops_livewall:8094 {
+			transport http {
+				dial_timeout 3s
+				read_timeout 60s
+			}
+		}
+	}
+
 	handle {
 		reverse_proxy ops_hub:80
 	}

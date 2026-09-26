@@ -1,6 +1,6 @@
 {
-  "version": "1.1.5",
-  "updated": "2026-09-17",
+  "version": "1.1.6",
+  "updated": "2026-09-26",
   "owner": "platform / SRE",
   "deploy": {
     "layout": "/opt/ops",
@@ -10,6 +10,17 @@
     "docs": "ops/DEPLOY.md"
   },
   "tools": [
+    {
+      "id": "live-wall",
+      "title": "Live Wall",
+      "status": "beta",
+      "blurb": "Мозаїка live-каналів (CG Усі), HLS proxy, OnCall auth, CDN metrics.",
+      "repo": "https://github.com/OCherep/live-wall",
+      "live": "/live-wall/",
+      "docs": "https://github.com/OCherep/live-wall/blob/main/docs/HUB.md",
+      "ops_dir": "/opt/ops/live-wall",
+      "tags": ["ott", "hls", "noc", "ops"]
+    },
     {
       "id": "netmap",
       "title": "Netmap",

@@ -1,6 +1,6 @@
 {
-  "version": "1.1.5",
-  "updated": "2026-09-17",
+  "version": "1.1.6",
+  "updated": "2026-10-07",
   "owner": "platform / SRE",
   "deploy": {
     "layout": "/opt/ops",
@@ -28,7 +28,7 @@
       "blurb": "Чергування, відсутності, звернення і дейлі-задачі. Docker-only.",
       "repo": "https://github.com/OCherep/oncall-system",
       "branch": "https://github.com/OCherep/oncall-system/tree/grok-1.0.0",
-      "live": "/oncall/",
+      "live": "https://s.ks.tv:85/",
       "docs": "https://github.com/OCherep/oncall-system/blob/grok-1.0.0/docs/API.md",
       "ops_dir": "/opt/ops/oncall",
       "tags": ["ops", "sre", "on-call", "incidents", "go"]

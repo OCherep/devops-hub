@@ -56,7 +56,6 @@ cp -a "$OPS/hub/ops/postgres/docker-compose.yml" "$OPS/postgres/" 2>/dev/null ||
 cp -a "$OPS/hub/ops/postgres/init/." "$OPS/postgres/init/" 2>/dev/null || true
 cp -a "$OPS/hub/ops/certs/docker-compose.yml" "$OPS/certs/" 2>/dev/null || true
 cp -a "$OPS/hub/ops/certs/ui/index.html" "$OPS/certs/ui/" 2>/dev/null || true
-# mentions code, не чіпати .env
 cp -a "$OPS/hub/ops/mentions/app.py" "$OPS/mentions/" 2>/dev/null || true
 cp -a "$OPS/hub/ops/mentions/Dockerfile" "$OPS/mentions/" 2>/dev/null || true
 cp -a "$OPS/hub/ops/mentions/docker-compose.yml" "$OPS/mentions/" 2>/dev/null || true
@@ -77,7 +76,6 @@ fi
 up "$OPS/hub"
 up "$OPS/radar"
 up "$OPS/certs"
-# Ether app is OCherep/ether@grok-0.0.1 — never copy hub/ops/ether (README + Caddy snippet only).
 if [ -d "$OPS/ether/.git" ]; then
   pull "$OPS/ether" origin grok-0.0.1
 elif [ -f "$OPS/ether/nginx.conf" ] || [ -f "$OPS/ether/public/index.html" ]; then
@@ -100,6 +98,13 @@ cp -a "$OPS/hub/ops/netmap/ui/." "$OPS/netmap/ui/" 2>/dev/null || true
 keep_env "$OPS/netmap/.env" /tmp/netmap.env.bak 2>/dev/null || true
 restore_env "$OPS/netmap/.env" /tmp/netmap.env.bak 2>/dev/null || true
 up "$OPS/netmap" --build --force-recreate
+if [ -d "$OPS/awsinv/.git" ]; then
+  pull "$OPS/awsinv" origin main
+else
+  echo "== clone aws-inventory =="
+  git clone --branch main --single-branch https://github.com/OCherep/aws-inventory.git "$OPS/awsinv"
+fi
+up "$OPS/awsinv" --build
 up "$OPS/oncall"
 up "$OPS/edge" --force-recreate
 
@@ -108,9 +113,10 @@ docker exec ops_edge wget -qO- -T 3 http://oncall_nginx_5/api/on-grid >/dev/null
 docker exec ops_edge wget -qO- -T 3 http://ops_hub/tools.json >/dev/null 2>&1 && echo "hub: OK" || echo "hub: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_mentions:8091/health >/dev/null 2>&1 && echo "mentions: OK" || echo "mentions: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_netmap:8092/health >/dev/null 2>&1 && echo "netmap: OK" || echo "netmap: FAIL"
+docker exec ops_edge wget -qO- -T 3 http://ops_awsinv:8093/health >/dev/null 2>&1 && echo "awsinv: OK" || echo "awsinv: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_ether/ether/ >/dev/null 2>&1 && echo "ether: OK" || echo "ether: FAIL"
 docker exec ops_edge wget -qO- -T 3 http://ops_certs_ui/ >/dev/null 2>&1 && echo "certs: OK" || echo "certs: FAIL"
 
 echo "== disk after =="
 df -h / | tail -1
-echo "done. UI: https://s.ks.tv/  https://s.ks.tv/ether/  https://s.ks.tv/mentions/  https://s.ks.tv:85/"
+echo "done. UI: https://s.ks.tv/  https://s.ks.tv/aws/  https://s.ks.tv/ether/  https://s.ks.tv/mentions/  https://s.ks.tv:85/"

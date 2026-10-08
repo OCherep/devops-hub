@@ -1,6 +1,6 @@
 {
-  "version": "1.1.6",
-  "updated": "2026-10-07",
+  "version": "1.1.7",
+  "updated": "2026-10-09",
   "owner": "platform / SRE",
   "deploy": {
     "layout": "/opt/ops",
@@ -16,7 +16,7 @@
       "status": "beta",
       "blurb": "Інвентар хостів по allowlist CIDR, nmap -sn, граф. Без CVE/pcap.",
       "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/netmap",
-      "live": "/netmap/",
+      "live": "https://s.ks.tv/netmap/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/netmap/README.md",
       "ops_dir": "/opt/ops/netmap",
       "tags": ["network", "nmap", "inventory", "ops"]
@@ -39,7 +39,7 @@
       "status": "beta",
       "blurb": "Tech portfolio: ADOPT / TRIAL / ASSESS / HOLD.",
       "repo": "https://github.com/OCherep/kstv-tech_radar",
-      "live": "/radar/",
+      "live": "https://s.ks.tv/radar/",
       "docs": "https://github.com/OCherep/kstv-tech_radar/blob/grok-0.0.1/docs/METRICS.md",
       "ops_dir": "/opt/ops/radar",
       "tags": ["architecture", "radar", "governance"]
@@ -50,7 +50,7 @@
       "status": "beta",
       "blurb": "Інвентар SSL/TLS, ZeroSSL/LE renew.",
       "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/certs",
-      "live": "/certs/",
+      "live": "https://s.ks.tv/certs/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/certs/README.md",
       "ops_dir": "/opt/ops/certs",
       "tags": ["tls", "zerossl", "acm", "ops"]
@@ -61,7 +61,7 @@
       "status": "active",
       "blurb": "Єдина перша сторінка + warm deploy layout.",
       "repo": "https://github.com/OCherep/devops-hub",
-      "live": "/",
+      "live": "https://s.ks.tv/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/DEPLOY.md",
       "ops_dir": "/opt/ops/hub",
       "tags": ["portal", "ops"]
@@ -72,7 +72,7 @@
       "status": "beta",
       "blurb": "Read-only інвентар AWS-акаунтів, теги, CloudWatch. Instance role.",
       "repo": "https://github.com/OCherep/aws-inventory",
-      "live": "/aws/",
+      "live": "https://s.ks.tv/aws/",
       "docs": "https://github.com/OCherep/aws-inventory/blob/main/docs/HUB.md",
       "ops_dir": "/opt/ops/awsinv",
       "tags": ["aws", "inventory", "ops"]
@@ -116,7 +116,7 @@
       "status": "beta",
       "blurb": "Згадки @devops-team у Slack.",
       "repo": "https://github.com/OCherep/devops-hub/tree/main/ops/mentions",
-      "live": "/mentions/",
+      "live": "https://s.ks.tv/mentions/",
       "docs": "https://github.com/OCherep/devops-hub/blob/main/ops/mentions/README.md",
       "ops_dir": "/opt/ops/mentions",
       "tags": ["slack", "ops", "mentions"]
@@ -127,7 +127,7 @@
       "status": "beta",
       "blurb": "Control plane overlay на opsnet.",
       "repo": "https://github.com/OCherep/ether",
-      "live": "/ether/",
+      "live": "https://s.ks.tv/ether/",
       "docs": "https://github.com/OCherep/ether/blob/grok-0.0.1/docs/devops-hub.md",
       "ops_dir": "/opt/ops/ether",
       "tags": ["ops", "sre", "overlay"]

@@ -1,0 +1,513 @@
+# Business phone numbers
+
+
+
+This document describes WhatsApp Business phone numbers, their requirements, management information, and unique features.
+
+## Registering business phone numbers
+
+A valid business phone number must be registered before it can be used to send and receive messages via Cloud API. Registered numbers can still be used for everyday purposes, such as calling and text messages, but cannot be used with WhatsApp Messenger (&quot;WhatsApp&quot;).
+
+Numbers already in use with WhatsApp cannot be registered unless they are [deleted](https://faq.whatsapp.com/2138577903196467/?helpref=uf_share) first. If your number is banned on WhatsApp and you wish to register it, it must be unbanned via the [appeal process](https://faq.whatsapp.com/465883178708358) first.
+
+When you complete the steps in the [Get Started](https://developers.facebook.com/documentation/business-messaging/whatsapp/get-started) document, a **test** business phone number is generated and registered for you automatically.
+
+### Eligibility requirements
+
+Eligible phone numbers must:
+
+- be owned by you
+- have a country and area code (short codes are not supported)
+- be able to receive voice calls or SMS
+- have [scaled capabilities](https://www.facebook.com/business/help/595597942906808)
+
+If you are registering a 1-800 number, see [1-800 and toll free numbers](#1-800-and-toll-free-numbers) for additional information.
+
+### Registration methods
+
+- **App Dashboard**: Complete the steps in the [Get Started](https://developers.facebook.com/documentation/business-messaging/whatsapp/get-started) document if you haven&#039;t already, then use the [App Dashboard](https://developers.facebook.com/apps) &gt; **WhatsApp** &gt; **API Setup** panel to add a phone number.
+- **Meta Business Suite**: You can register a business phone number when [using Meta Business Suite to create a WhatsApp Business account](https://developers.facebook.com/documentation/business-messaging/whatsapp/whatsapp-business-accounts#create-a-waba-via-meta-business-suite).
+- **WhatsApp Manager**: See our [How to connect your phone number to your WhatsApp Business account](https://www.facebook.com/business/help/456220311516626) help center article.
+- **Embedded Signup**: If you are working with a Solution Partner, they will provide you with a link to Embedded Signup, which you can use to register a number.
+
+**Note:** The methods above add a phone number to your WhatsApp Business account and verify your ownership, but they do not register the number for Cloud API use. To complete registration, call the [register endpoint](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/registration#register). If you are a Solution Partner or Tech Provider using Embedded Signup, see [Registering business phone numbers](https://developers.facebook.com/documentation/business-messaging/whatsapp/solution-providers/registering-phone-numbers#step-4--register-the-number).
+
+## Business phone number types
+
+This table categorizes phone number types and evaluates their suitability for receiving OTPs via SMS, international phone calls, and flash calls. It provides likelihood assessments for successful delivery based on number type and carrier characteristics. Additionally, it offers actionable recommendations for users to improve delivery success without changing their phone number type.
+
+| Phone type | Description | SMS OTP | Voice OTP | Actions |
+| --- | --- | --- | --- | --- |
+| Mobile (recommended) | Assigned to mobile devices/SIMs | Standard | Standard | Enable International reception of SMS/Calls, ensure device is connected to Cellular Network, Grant App permissions |
+| Fixed line | Assigned to physical locations (landline) | Not Recommended | Standard | Enable International reception of SMS/Calls, ensure line is ready for incoming calls and disable call forwarding or IVR features |
+| Freephone | Toll-Free, recipient pays | Not Recommended | Standard | Ensure with Phone provider that the number is able to receive International SMS/Calls, check that line is ready for incoming calls and disable call forwarding or IVR features |
+| Premium rate | Higher charges for special services | Not Recommended | Standard | Ensure with Phone provider that the number is able to receive International SMS/Calls, check that line is ready for incoming calls and disable call forwarding or IVR features |
+| Shared cost | Cost shared between caller and recipient | Not Recommended | Not Recommended | Ensure with Phone provider that the number is able to receive International SMS/Calls, check that line is ready for incoming calls and disable call forwarding or IVR features |
+| Universal access | Reachable globally for customer service | Not Recommended | Standard | Ensure with Phone provider that the number is able to receive International SMS/Calls, check that line is ready for incoming calls and disable call forwarding or IVR features |
+| Personal number | Assigned to individuals, not tied to device | Not Recommended | Not Recommended | Ensure with Phone provider that the number is able to receive International SMS/Calls, check that line is ready for incoming calls and disable call forwarding or IVR features |
+| VoIP | Internet telephony, not tied to physical line | Not Recommended | Standard | Confirm that the VoIP provider supports international SMS/calls for OTPs; check provisioning and account settings; keep app/service running and notifications enabled; ensure device is online and permissions granted |
+| Inbound only | Only accept incoming calls/messages | Not Recommended | Standard | Ensure with Phone provider that the number is able to receive International SMS/Calls, check that line is ready for incoming calls and disable call forwarding or IVR features |
+| Pager | Assigned to pagers (rare) | Not supported | Not supported | Not supported |
+| M2M/IoT | Machine-to-machine, smart devices | Not Recommended | Not Recommended | Ensure device and SIM are allowed for incoming International SMS/calls |
+
+## Status
+
+Business phone numbers have a status, which reflects their quality rating and current [messaging limit](https://developers.facebook.com/documentation/business-messaging/whatsapp/messaging-limits). Business phone numbers must have a status of &quot;connected&quot; in order to send and receive messages via the API.
+
+### Viewing status via WhatsApp Manager
+
+Your business phone number&#039;s current status appears in the **Status** column in the [WhatsApp Manager](https://business.facebook.com/latest/whatsapp_manager/) &gt; **Account tools** &gt; **Phone numbers** panel.
+
+See the [About your WhatsApp Business phone number&#039;s quality rating](https://www.facebook.com/business/help/896873687365001) help center article to learn more about quality ratings and statuses as they appear in WhatsApp Manager.
+
+### Getting status via API
+
+Request the `status` field on your WhatsApp Business Phone Number ID. See the [WhatsApp Business Phone Number API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/whatsapp-business-account-phone-number-api#get-version-phone-number-id) reference for a list of returnable status values and their meanings.
+
+#### Example request
+
+```curl
+curl &#039;https://graph.facebook.com/v25.0/106540352242922?fields=status&#039; \
+-H &#039;Authorization: Bearer EAAJB...&#039;
+```
+
+#### Example response
+
+```json
+&#123;
+  &quot;status&quot;: &quot;CONNECTED&quot;,
+  &quot;id&quot;: &quot;106540352242922&quot;
+&#125;
+```
+
+## Display names
+
+You must provide display name information when registering a business phone number. The display name appears in your business phone number&#039;s WhatsApp profile, and can also appear at the top of **individual chat** threads and the **chat list** if certain conditions are met. See the [Display names](https://developers.facebook.com/documentation/business-messaging/whatsapp/display-names) document to learn how display names work.
+
+## Business profiles
+
+A business profile provides additional information about your business, such as its address, website, description, and so on. You can supply this information when registering your business phone number. See the [Business profiles](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-profiles) document to learn how business profiles work.
+
+## Official Business Account status
+
+Business phone numbers can gain Official Business Account (OBA) status. OBA numbers have a blue checkmark beside their name in the contacts view.
+
+See the [Official Business Account](https://developers.facebook.com/documentation/business-messaging/whatsapp/official-business-accounts) document to learn how to request OBA status for a business phone number.
+
+## Two-step verification
+
+You must set a two-step verification PIN when registering a business phone number. Your PIN is required when changing your PIN or deleting your phone number from the platform.
+
+### Changing your PIN via WhatsApp Manager
+
+You will need your current PIN to change your PIN via WhatsApp Manager. To change your PIN:
+
+1. Navigate to [WhatsApp Manager](https://business.facebook.com/latest/whatsapp_manager/) &gt; **Account tools** &gt; **Phone numbers**.
+2. Select your business phone number.
+3. Click the **Two-step verification** tab.
+4. Click the **Change PIN** button and complete the flow.
+
+If you don&#039;t have your PIN, you can change your PIN using the API.
+
+### Changing your PIN via API
+
+Use the [WhatsApp Business Phone Number API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/whatsapp-business-account-phone-number-api#post-version-phone-number-id) to set a new PIN.
+
+#### Example request
+
+```curl
+curl &#039;https://graph.facebook.com/v25.0/106540352242922/&#039; \
+-H &#039;Content-Type: application/json&#039; \
+-H &#039;Authorization: Bearer EAAJB...&#039; \
+-d &#039;
+&#123;
+  &quot;pin&quot;: &quot;150954&quot;
+&#125;&#039;
+```
+
+#### Example response
+
+Upon success:
+
+```json
+&#123;
+  &quot;success&quot;: true
+&#125;
+```
+
+### Disabling two-step verification
+
+To disable two-step verification using WhatsApp Manager, follow the steps for changing your PIN, but click the **Turn off two-step verification** button as the final step instead. An email with a link will be sent to the email address associated with your business portfolio. Use the link to disable two-step verification. Once disabled, you can re-enable it by setting a new PIN.
+
+Note that you cannot disable two-step verification using the API.
+
+## 1-800 and toll free numbers
+
+You may want to register a 1-800 or other toll free number on the platform. These numbers are usually behind an Interactive Voice Response (IVR) system. A WhatsApp registration call cannot navigate an IVR. Phone numbers behind an IVR system can be registered, but must be able to accept calls from international numbers and be able to redirect the SMS message or voice call to a real person.
+
+To register a phone number that is behind an IVR system:
+
+1. WhatsApp shares with you one or two phone numbers that the registration call will come from.
+2. Create an allow list for these numbers. If you are unable to create an allow list for these numbers, add the phone number to your WABA and open a Direct Support ticket asking for the registration call phone numbers and include the phone number you are trying to register in the ticket.
+3. Redirect the registration call to an employee or a mailbox to capture the registration code.
+
+Phone numbers behind an IVR system that are unable to receive registration calls are not supported.
+
+## Registered number cap
+
+New business portfolios are initially capped at two registered business phone numbers.
+
+If your business becomes [verified](https://www.facebook.com/business/help/1095661473946872), or if you have reached a [messaging limit](https://developers.facebook.com/documentation/business-messaging/whatsapp/messaging-limits) of 2,000, Meta will automatically increase your cap to 20. Upon increase, a Meta Business Suite notification will be sent, informing you of your new cap, and a [business_capability_update](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/business_capability_update) webhook will be triggered with `max_phone_numbers_per_business` set to your new cap.
+
+## Verify phone numbers
+
+You need to verify the phone number you want to use to send messages to your customers. Phone numbers must be verified using a code sent via an SMS/voice call. The verification process can be done via the API calls specified below.
+
+Use the [Request Code API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/phone-number-verification-request-code-api) to request a verification code. In your call, include your chosen verification method and language.
+
+| Endpoint | Authentication |
+| --- | --- |
+| `/PHONE_NUMBER_ID/request_code` | Authenticate yourself with a system user access token.&lt;br&gt;&lt;br&gt;If you are requesting the code on behalf of another business, the access token needs to have Advanced Access to the `whatsapp_business_management` permission. |
+
+### Parameters
+
+| Name | Description |
+| --- | --- |
+| `code_method`&lt;br&gt;&lt;br&gt;_string_ | **Required.**&lt;br&gt;&lt;br&gt;Chosen method for verification. Supported options:&lt;br&gt;&lt;br&gt;- `SMS`&lt;br&gt;- `VOICE` |
+| `language`&lt;br&gt;&lt;br&gt;_string_ | **Required.**&lt;br&gt;&lt;br&gt;The language&#039;s two-character [language code](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/supported-languages). For example: `&quot;en&quot;`. |
+
+### Example request
+
+```curl
+curl -X POST &#039;https://graph.facebook.com/v25.0/106540352242922/request_code?code_method=SMS&amp;language=en_US&#039; \
+-H &#039;Authorization: Bearer EAAJB...&#039;
+```
+
+After the API call, you will receive your verification code via the method you selected. To finish the verification process, use the [Verify Code API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/verify-code-api#post-version-phone-number-id-verify-code) to submit your code.
+
+| Endpoint | Authentication |
+| --- | --- |
+| `/PHONE_NUMBER_ID/verify_code` | Authenticate yourself with a system user access token.&lt;br&gt;&lt;br&gt;If you are requesting the code on behalf of another business, the access token needs to have Advanced Access to the `whatsapp_business_management` permission. |
+
+### Parameters
+
+| Name | Description |
+| --- | --- |
+| `code`&lt;br&gt;&lt;br&gt;_numeric string_ | **Required.**&lt;br&gt;&lt;br&gt;The code you received after calling `FROM_PHONE_NUMBER_ID/request_code`. |
+
+### Example
+
+Sample request:
+
+```curl
+curl -X POST \
+  &#039;https://graph.facebook.com/v25.0/FROM_PHONE_NUMBER_ID/verify_code&#039; \
+  -H &#039;Authorization: Bearer ACCESS_TOKEN&#039; \
+  -F &#039;code=000000&#039;
+```
+
+
+A successful response looks like this:
+
+```json
+&#123;
+  &quot;success&quot;: true
+&#125;
+```
+
+If the phone number has already been verified, calling the `request_code` endpoint returns HTTP 400 with error code `136024`. Check the `code_verification_status` field before calling this endpoint.
+
+## WhatsApp user phone number formats
+
+Plus signs (`+`), hyphens (`-`), parenthesis (`(`,`)`), and spaces are supported in send message requests.
+
+We highly recommend that you include both the plus sign and country calling code when sending a message to a customer. If the plus sign is omitted, your business phone number&#039;s country calling code is prepended to the customer&#039;s phone number. This can result in undelivered or misdelivered messages.
+
+For example, if your business is in India (country calling code `91`) and you send a message to the following customer phone number in various formats:
+
+| Number In Send Message Request | Number Message Delivered To | Outcome |
+| --- | --- | --- |
+| `+16315551234` | `+16315551234` | Correct number |
+| `+1 (631) 555-1234` | `+16315551234` | Correct number |
+| `(631) 555-1234` | `+916315551234` | Potentially wrong number |
+| `1 (631) 555-1234` | `+9116315551234` | Potentially wrong number |
+
+Note: For Brazil and Mexico, the extra added prefix of the phone number may be modified by the Cloud API. This is a standard behavior of the system and is not considered a bug.
+
+
+## Identity change check
+
+You can have Meta verify a customer&#039;s identity before delivering your message to them by enabling the identity change check setting on your business phone number.
+
+If a customer performs an action in WhatsApp that is considered an identity change, Meta generates a new identity hash for the user. To get this hash when messaging a customer, enable the identity change check setting on your business phone number. Once enabled, anytime the customer messages you, or you message the customer without an identity hash, [any incoming messages webhooks](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages#incoming-messages) or [status messages webhooks](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/status) will include their hash. You can then capture and store this hash for future use.
+
+To use the hash, include it in a send message request. Meta compares the hash in the request to the customer&#039;s current hash. If the hashes match, the message will be delivered. If there is a mismatch, it means the customer has changed their identity since you last messaged them and the message will not be delivered. Instead, you will receive a status messages webhook with error code `137000`, notifying you of the failure and mismatch.
+
+When you receive a mismatched hash webhook, assume the customer&#039;s phone number can no longer be trusted. To reestablish trust, verify the customer&#039;s identity again using other, non-WhatsApp channels. Once you have reestablished trust, resend the failed message to the new identity (if any), without a hash. Then store the customer&#039;s new hash included in the message status delivery webhook.
+
+### Request syntax
+
+Use the [Settings API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/settings-api#post-version-phone-number-id-settings) to enable or disable the identity change check setting.
+
+### Post body
+
+```json
+&#123;
+  &quot;user_identity_change&quot; : &#123;
+    &quot;enable_identity_key_check&quot;: &lt;ENABLE_IDENTITY_KEY_CHECK&gt;
+  &#125;
+&#125;
+```
+
+Set `&lt;ENABLE_IDENTITY_KEY_CHECK&gt;` to `true` to enable identity check, or `false` to disable it.
+
+### Example enable request
+
+```curl
+curl &#039;https://graph.facebook.com/v25.0/106850078877666/settings&#039; \
+-H &#039;Content-Type: application/json&#039; \
+-H &#039;Authorization: Bearer EAAJB...&#039; \
+-d &#039;
+&#123;
+  &quot;user_identity_change&quot;: &#123;
+    &quot;enable_identity_key_check&quot;: true
+  &#125;
+&#125;&#039;
+```
+
+### Example enable response
+
+```json
+&#123;
+  &quot;success&quot;: true
+&#125;
+```
+
+### Example send message with check
+
+This example message would only be delivered if the `recipient_identity_key_hash` hash value matches the customer&#039;s current hash.
+
+```curl
+curl &#039;https://graph.facebook.com/v25.0/106850078877666/messages&#039; \
+-H &#039;Content-Type: application/json&#039; \
+-H &#039;Authorization: Bearer EAAJB...&#039; \
+-d &#039;
+&#123;
+  &quot;messaging_product&quot;: &quot;whatsapp&quot;,
+  &quot;recipient_type&quot;: &quot;individual&quot;,
+  &quot;to&quot;: &quot;+16505551234&quot;,
+  &quot;recipient_identity_key_hash&quot;: &quot;DF2lS5v2W6x=&quot;,
+  &quot;type&quot;: &quot;text&quot;,
+  &quot;text&quot;: &#123;
+    &quot;preview_url&quot;: false,
+    &quot;body&quot;: &quot;Your latest statement is attached. See... &quot;
+  &#125;
+&#125;&#039;
+```
+
+### Webhooks
+
+In incoming messages webhooks with a `contacts` object, such as the [text messages webhook](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/text), the customer&#039;s hash is assigned to the `identity_key_hash` property.
+
+In outgoing messages webhooks ([status messages webhooks](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/status)), the customer&#039;s hash is assigned to the `recipient_identity_key_hash` property in the `statuses` object.
+
+## Get throughput level
+
+Use the [WhatsApp Business Phone Number API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/whatsapp-business-account-phone-number-api#get-version-phone-number-id) to get a phone number&#039;s current [throughput level](https://developers.facebook.com/documentation/business-messaging/whatsapp/throughput):
+
+`GET /&lt;WHATSAPP_BUSINESS_PHONE_NUMBER_ID&gt;?fields=throughput`
+
+## Get all phone numbers
+
+Use the [Phone Numbers API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-account/phone-number-management-api) to get a list of all phone numbers associated with a WhatsApp Business account.
+
+In addition, phone numbers can be sorted in either ascending or descending order by `last_onboarded_time`, which is based on when the user completed onboarding for [Embedded Signup](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/overview). If not specified, the default order is descending.
+
+### Request syntax
+
+```html
+curl -X GET &quot;https://graph.facebook.com/&lt;API_VERSION&gt;/&lt;WABA_ID&gt;/phone_numbers?access_token=&lt;ACCESS_TOKEN&gt;&quot;
+```
+
+On success, a JSON object is returned with a list of all the business names, phone numbers, phone number IDs, and quality ratings associated with a business. Results are sorted by Embedded Signup completion date in descending order, with the most recently onboarded listed first.
+
+### Example response
+
+```json
+&#123;
+  &quot;data&quot;: [
+    &#123;
+      &quot;verified_name&quot;: &quot;Jasper&#039;s Market&quot;,
+      &quot;display_phone_number&quot;: &quot;+1 631-555-5555&quot;,
+      &quot;id&quot;: &quot;1906385232743451&quot;,
+      &quot;quality_rating&quot;: &quot;GREEN&quot;
+
+    &#125;,
+    &#123;
+      &quot;verified_name&quot;: &quot;Jasper&#039;s Ice Cream&quot;,
+      &quot;display_phone_number&quot;: &quot;+1 631-555-5556&quot;,
+      &quot;id&quot;: &quot;1913623884432103&quot;,
+      &quot;quality_rating&quot;: &quot;NA&quot;
+    &#125;
+  ]
+&#125;
+```
+
+### Request syntax
+
+```html
+curl -X GET &quot;https://graph.facebook.com/&lt;API_VERSION&gt;/&lt;WABA_ID&gt;/phone_numbers?access_token=&lt;SYSTEM_USER_ACCESS_TOKEN&gt;]&amp;sort=[&#039;last_onboarded_time_ascending&#039;]&quot;
+```
+
+### Example response
+
+On success, a JSON object is returned with a list of all the business names, phone numbers, phone number IDs, and quality ratings associated with a business. It is sorted based on when the user has completed Embedded Signup in ascending order, with the most recently onboarded listed last.
+
+```json
+&#123;
+  &quot;data&quot;: [
+   &#123;
+      &quot;verified_name&quot;: &quot;Jasper&#039;s Ice Cream&quot;,
+      &quot;display_phone_number&quot;: &quot;+1 631-555-5556&quot;,
+      &quot;id&quot;: &quot;1913623884432103&quot;,
+      &quot;quality_rating&quot;: &quot;NA&quot;
+    &#125;,
+    &#123;
+      &quot;verified_name&quot;: &quot;Jasper&#039;s Market&quot;,
+      &quot;display_phone_number&quot;: &quot;+1 631-555-5555&quot;,
+      &quot;id&quot;: &quot;1906385232743451&quot;,
+      &quot;quality_rating&quot;: &quot;GREEN&quot;
+    &#125;
+  ]
+&#125;
+```
+
+### Filter phone numbers
+
+You can query phone numbers and filter them based on their `account_mode`. This filtering option is currently being tested in beta mode. Not all developers have access to it.
+
+#### Parameters
+
+| Name | Description |
+| --- | --- |
+| `field` | **Value:** `account_mode` |
+| `operator` | **Value:** `EQUAL` |
+| `value` | **Values:** `SANDBOX`, `LIVE` |
+
+#### Request syntax
+
+```html
+curl -i -X GET &quot;https://graph.facebook.com/&lt;API_VERSION&gt;/&lt;WABA_ID&gt;/phone_numbers?filtering=[&#123;&quot;field&quot;:&quot;account_mode&quot;,&quot;operator&quot;:&quot;EQUAL&quot;,&quot;value&quot;:&quot;SANDBOX&quot;&#125;]&amp;access_token=&lt;ACCESS_TOKEN&gt;&quot;
+```
+
+### Example response
+
+```json
+&#123;
+  &quot;data&quot;: [
+    &#123;
+      &quot;id&quot;: &quot;1972385232742141&quot;,
+      &quot;display_phone_number&quot;: &quot;+1 631-555-1111&quot;,
+      &quot;verified_name&quot;: &quot;John&#039;s Cake Shop&quot;,
+      &quot;quality_rating&quot;: &quot;UNKNOWN&quot;
+    &#125;
+  ],
+  &quot;paging&quot;: &#123;
+  &quot;cursors&quot;: &#123;
+    &quot;before&quot;: &quot;abcdefghij&quot;,
+    &quot;after&quot;: &quot;klmnopqr&quot;
+  &#125;
+   &#125;
+&#125;
+```
+
+## Get a single phone number
+
+Use the [WhatsApp Business Phone Number API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/whatsapp-business-account-phone-number-api#get-version-phone-number-id) to get information about a phone number:
+
+### Request syntax
+
+```html
+GET https://graph.facebook.com/&lt;API_VERSION&gt;/&lt;PHONE_NUMBER_ID&gt;
+```
+
+### Sample request
+
+```curl
+curl \
+&#039;https://graph.facebook.com/v15.0/105954558954427/&#039; \
+-H &#039;Authorization: Bearer EAAFl...&#039;
+```
+
+On success, a JSON object is returned with the business name, phone number, phone number ID, and quality rating for the phone number queried.
+
+```json
+&#123;
+  &quot;code_verification_status&quot; : &quot;VERIFIED&quot;,
+  &quot;display_phone_number&quot; : &quot;15555555555&quot;,
+  &quot;id&quot; : &quot;105954558954427&quot;,
+  &quot;quality_rating&quot; : &quot;GREEN&quot;,
+  &quot;verified_name&quot; : &quot;Support Number&quot;
+&#125;
+```
+
+## Get display name status (beta)
+
+Include `fields=name_status` as a query string parameter to get the status of a display name associated with a specific phone number. This field is currently in beta and not available to all developers.
+
+### Sample request
+
+```curl
+curl \
+&#039;https://graph.facebook.com/v15.0/105954558954427?fields=name_status&#039; \
+-H &#039;Authorization: Bearer EAAFl...&#039;
+```
+
+### Sample response
+
+```json
+&#123;
+  &quot;id&quot; : &quot;105954558954427&quot;,
+  &quot;name_status&quot; : &quot;AVAILABLE_WITHOUT_REVIEW&quot;
+&#125;
+```
+
+The `name_status` value can be one of the following:
+
+- `APPROVED`: The name has been approved.
+- `AVAILABLE_WITHOUT_REVIEW`: The display name is ready to use without review.
+- `DECLINED`: The name has not been approved.
+- `EXPIRED`: The phone number&#039;s certificate has expired and cannot be used to register the phone number for API use.
+- `PENDING_REVIEW`: Your name request is under review.
+- `NONE`: The phone number does not have a certificate and cannot be used to register the phone number for API use.
+
+## Deleting business phone numbers
+
+Only business portfolio admins can delete business phone numbers, and numbers can&#039;t be deleted if they have been used to send paid messages within the last 30 days.
+
+### Deleting business phone numbers via WhatsApp Manager
+
+If your business phone number has a Connected status, you will need your two-step verification PIN to delete your number.
+
+1. Load your business portfolio in the [WhatsApp Manager](https://business.facebook.com/wa/manage/home/).
+1. If it doesn&#039;t automatically load the Phone numbers panel, navigate to **Account tools** (the toolbox icon) &gt; **Phone numbers**.
+1. Click the phone number&#039;s trash can icon and complete the flow.
+
+If the number has been used to send paid messages within the last 30 days, you will be redirected to the **Insights** panel, showing the date of the last paid message. You can delete the number 30 days from this date.
+
+### Deleting business phone numbers via API
+
+You can&#039;t delete a business phone number via the API. To delete a business phone number, use [WhatsApp Manager](https://business.facebook.com/wa/manage/home/) as described in the previous section.
+
+## Migrating business phone numbers
+
+You can [migrate phone numbers from one WABA to another](https://developers.facebook.com/documentation/business-messaging/whatsapp/solution-providers/support/migrating-phone-numbers-among-solution-partners-via-embedded-signup).
+
+## Conversational components
+
+You can enable helpful message UI components to make it easier for WhatsApp users to interact with your business. See [Conversational components](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/conversational-components).
+
+
+---
+
+Full documentation index for this product: https://developers.facebook.com/documentation/business-messaging/whatsapp/llms.txt

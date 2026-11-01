@@ -13,7 +13,63 @@ except Exception:
     psycopg2 = None
 
 PORT = int(os.getenv("PORT", "8092"))
-DSN = os.getenv("DATABASE_URL", "postgres://ops:ops-change-me@ops_postgres:5432/platform")
+DSN = os.getenv("DATABASE_URL", "")  # без дефолту з паролем
+if not DSN:
+    print("SECURITY: DATABASE_URL не задано — netmap БД вимкнено", flush=True)
+ONCALL_API = os.getenv("ONCALL_API", "http://oncall_nginx_5")
+HUB_ORIGIN = os.getenv("HUB_ORIGIN", "https://s.ks.tv")
+
+# --- Auth через сесію OnCall (DevOps Hub логінить користувача в OnCall; cookie oncall_session
+# або Authorization: Bearer). Перевірка — серверним запитом до ONCALL_API/api/session/me.
+# Ролі й ідентичність НЕ беруться із заголовків/тіла клієнта. Fail closed: OnCall недоступний → 401.
+_AUTH_CACHE = {}
+
+def _session_token(headers):
+    authz = (headers.get("Authorization") or "").strip()
+    if authz.lower().startswith("bearer "):
+        return authz[7:].strip()
+    for part in (headers.get("Cookie") or "").split(";"):
+        k, _, v = part.strip().partition("=")
+        if k == "oncall_session" and v:
+            return v
+    return ""
+
+def oncall_me(headers):
+    import hashlib as _hl, time as _tm, urllib.request as _ur, json as _js
+    tok = _session_token(headers)
+    if not tok:
+        return None
+    key = _hl.sha256(tok.encode()).hexdigest()
+    hit = _AUTH_CACHE.get(key)
+    if hit and hit[0] > _tm.time():
+        return hit[1]
+    h = {"Accept": "application/json", "Authorization": "Bearer " + tok}
+    xff = headers.get("X-Forwarded-For") or headers.get("X-Real-IP")
+    if xff:
+        h["X-Forwarded-For"] = xff  # щоб IP-allowlist OnCall бачив клієнта, а не контейнер
+    me = None
+    try:
+        with _ur.urlopen(_ur.Request(ONCALL_API.rstrip("/") + "/api/session/me", headers=h), timeout=5) as r:
+            if r.status == 200:
+                me = _js.loads(r.read().decode() or "{}")
+    except Exception:
+        me = None
+    if len(_AUTH_CACHE) > 1000:
+        _AUTH_CACHE.clear()
+    _AUTH_CACHE[key] = (_tm.time() + 30, me)
+    return me
+
+def require_session(handler, admin=False):
+    """True — пропустити; False — відповідь 401/403 вже надіслано."""
+    me = oncall_me(handler.headers)
+    if not me:
+        handler._json(401, {"error": "unauthorized", "hint": "Увійдіть у DevOps Hub (OnCall)"})
+        return False
+    if admin and me.get("role") != "admin":
+        handler._json(403, {"error": "admin required"})
+        return False
+    return True
+
 DEFAULT_CIDRS = os.getenv("NETMAP_CIDRS", "")  # comma-separated, empty = no auto-scan
 MAX_HOSTS = int(os.getenv("NETMAP_MAX_HOSTS", "256"))
 SCAN_LOCK = threading.Lock()
@@ -200,7 +256,7 @@ class H(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", HUB_ORIGIN)
         self.end_headers()
         self.wfile.write(raw)
 
@@ -210,7 +266,7 @@ class H(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", HUB_ORIGIN)
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
@@ -232,6 +288,8 @@ class H(BaseHTTPRequestHandler):
                 return self._json(500, {"error": str(e)})
         if path.endswith("/health"):
             return self._json(200, {"ok": True})
+        if "/api/" in path and not require_session(self):
+            return
         if path.endswith("/api/cidrs"):
             _, rows = allowed_cidrs()
             return self._json(200, {"cidrs": rows})
@@ -257,6 +315,9 @@ class H(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        # зміна CIDR і запуск nmap — лише admin-сесія OnCall
+        if not require_session(self, admin=True):
+            return
         try:
             body = json.loads(self._read() or "{}")
         except Exception:

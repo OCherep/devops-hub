@@ -37,6 +37,42 @@ up() {
   (cd "$dir" && docker compose up -d --remove-orphans "$@")
 }
 
+# --- preflight секретів (FAIL, значення не друкуються) ---
+envget() { # envget <file> <KEY>
+  [ -f "$1" ] || return 0
+  grep -E "^$2=" "$1" | tail -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//'
+}
+bad_secret() { # порожнє, плейсхолдер або < 16 символів
+  local v="$1"; local l; l="$(printf '%s' "$v" | tr '[:upper:]' '[:lower:]')"
+  [ -z "$v" ] || [ "${#v}" -lt 16 ] || case "$l" in *change-me*|*changeme*|your-long-random-secret|ops) true ;; *) false ;; esac
+}
+PREFLIGHT_FAIL=0
+need() { # need <file> <KEY>
+  local v; v="$(envget "$1" "$2")"
+  if bad_secret "$v"; then echo "FAIL preflight: $2 у $1 не задано/дефолтний/коротший за 16"; PREFLIGHT_FAIL=1
+  else echo "ok   preflight: $2 у $1 (${#v} симв., приховано)"; fi
+}
+need "$OPS/oncall/.env"   DB_ADMIN_PASSWORD
+need "$OPS/oncall/.env"   WEBHOOK_SECRET
+need "$OPS/postgres/.env" POSTGRES_PASSWORD
+for f in "$OPS/mentions/.env" "$OPS/netmap/.env"; do
+  u="$(envget "$f" DATABASE_URL)"
+  case "$u" in ""|*ops-change-me*|*://ops:ops@*) echo "FAIL preflight: DATABASE_URL у $f не задано або з дефолтним паролем"; PREFLIGHT_FAIL=1 ;;
+    *) echo "ok   preflight: DATABASE_URL у $f (приховано)" ;; esac
+done
+for k in SLACK_SIGNING_SECRET ONCALL_READ_TOKEN; do
+  [ -n "$(envget "$OPS/oncall/.env" "$k")" ] || echo "WARN preflight: $k не задано в oncall/.env — функцію вимкнено (fail closed)"
+done
+[ -n "$(envget "$OPS/mentions/.env" SLACK_SIGNING_SECRET)" ] || echo "WARN preflight: SLACK_SIGNING_SECRET не задано в mentions/.env — Slack events вимкнено"
+if [ "$(envget "$OPS/oncall/.env" ONCALL_READ_TOKEN)" != "$(envget "$OPS/mentions/.env" ONCALL_READ_TOKEN)" ]; then
+  echo "WARN preflight: ONCALL_READ_TOKEN в oncall/.env і mentions/.env різний — roster mentions буде урізаним"
+fi
+sa="$(envget "$OPS/oncall/.env" SOFT_AUTH)"; [ -z "$sa" ] || [ "$sa" = "0" ] || echo "WARN preflight: SOFT_AUTH=$sa більше не діє — приберіть"
+if [ "$PREFLIGHT_FAIL" -ne 0 ] && [ "${SKIP_SECRET_PREFLIGHT:-0}" != "1" ]; then
+  echo "Деплой зупинено: задайте секрети (див. hub/ops/SECURITY-AUTH.md)"; exit 1
+fi
+[ "${PREFLIGHT_ONLY:-0}" = "1" ] && { echo "PREFLIGHT_ONLY=1 — вихід без змін"; exit 0; }
+
 "$OPS/hub/ops/network.sh" 2>/dev/null || "$OPS/network.sh" 2>/dev/null || docker network create opsnet 2>/dev/null || true
 
 keep_env "$OPS/oncall/.env" /tmp/oncall.env.bak

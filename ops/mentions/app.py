@@ -9,13 +9,68 @@ try:
 except Exception:
     psycopg2 = None
 
-DSN = os.getenv("DATABASE_URL", "postgres://ops:ops@ops_postgres:5432/platform")
+DSN = os.getenv("DATABASE_URL", "")  # без дефолту з паролем; не задано → БД-функції вимкнено (лог)
+if not DSN:
+    print("SECURITY: DATABASE_URL не задано — БД-функції mentions вимкнено", flush=True)
 BOT = os.getenv("SLACK_BOT_TOKEN", "")
 USER = os.getenv("SLACK_USER_TOKEN", "")
 SIGN = os.getenv("SLACK_SIGNING_SECRET", "")
 TEAM_GROUP = os.getenv("SLACK_DEVOPS_GROUP", "devops-team")
 PORT = int(os.getenv("PORT", "8091"))
 ONCALL_API = os.getenv("ONCALL_API", "http://oncall_nginx_5")
+ONCALL_READ_TOKEN = os.getenv("ONCALL_READ_TOKEN", "")
+HUB_ORIGIN = os.getenv("HUB_ORIGIN", "https://s.ks.tv")
+
+# --- Auth через сесію OnCall (DevOps Hub логінить користувача в OnCall; cookie oncall_session
+# або Authorization: Bearer). Перевірка — серверним запитом до ONCALL_API/api/session/me.
+# Ролі й ідентичність НЕ беруться із заголовків/тіла клієнта. Fail closed: OnCall недоступний → 401.
+_AUTH_CACHE = {}
+
+def _session_token(headers):
+    authz = (headers.get("Authorization") or "").strip()
+    if authz.lower().startswith("bearer "):
+        return authz[7:].strip()
+    for part in (headers.get("Cookie") or "").split(";"):
+        k, _, v = part.strip().partition("=")
+        if k == "oncall_session" and v:
+            return v
+    return ""
+
+def oncall_me(headers):
+    import hashlib as _hl, time as _tm, urllib.request as _ur, json as _js
+    tok = _session_token(headers)
+    if not tok:
+        return None
+    key = _hl.sha256(tok.encode()).hexdigest()
+    hit = _AUTH_CACHE.get(key)
+    if hit and hit[0] > _tm.time():
+        return hit[1]
+    h = {"Accept": "application/json", "Authorization": "Bearer " + tok}
+    xff = headers.get("X-Forwarded-For") or headers.get("X-Real-IP")
+    if xff:
+        h["X-Forwarded-For"] = xff  # щоб IP-allowlist OnCall бачив клієнта, а не контейнер
+    me = None
+    try:
+        with _ur.urlopen(_ur.Request(ONCALL_API.rstrip("/") + "/api/session/me", headers=h), timeout=5) as r:
+            if r.status == 200:
+                me = _js.loads(r.read().decode() or "{}")
+    except Exception:
+        me = None
+    if len(_AUTH_CACHE) > 1000:
+        _AUTH_CACHE.clear()
+    _AUTH_CACHE[key] = (_tm.time() + 30, me)
+    return me
+
+def require_session(handler, admin=False):
+    """True — пропустити; False — відповідь 401/403 вже надіслано."""
+    me = oncall_me(handler.headers)
+    if not me:
+        handler._json(401, {"error": "unauthorized", "hint": "Увійдіть у DevOps Hub (OnCall)"})
+        return False
+    if admin and me.get("role") != "admin":
+        handler._json(403, {"error": "admin required"})
+        return False
+    return True
 
 SCHEMA_SQL = """
 CREATE SCHEMA IF NOT EXISTS mentions;
@@ -87,7 +142,10 @@ def refresh_oncall_roster():
     now = dt.date.today()
     url = f"{ONCALL_API.rstrip('/')}/api/data?year={now.year}&month={now.month}"
     try:
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        hdr = {"Accept": "application/json"}
+        if ONCALL_READ_TOKEN:
+            hdr["X-Oncall-Read-Token"] = ONCALL_READ_TOKEN  # повний /api/data (username/slack_id)
+        req = urllib.request.Request(url, headers=hdr)
         with urllib.request.urlopen(req, timeout=12) as r:
             data = json.loads(r.read().decode())
     except Exception as e:
@@ -408,7 +466,7 @@ def ingest_message(ev, force_team=False):
 
 def verify_slack(headers, body):
     if not SIGN:
-        return True
+        return False  # fail closed: без SLACK_SIGNING_SECRET події не приймаються
     ts = headers.get("X-Slack-Request-Timestamp") or headers.get("x-slack-request-timestamp") or ""
     sig = headers.get("X-Slack-Signature") or headers.get("x-slack-signature") or ""
     if abs(time.time() - int(ts or 0)) > 60 * 5:
@@ -425,7 +483,7 @@ class H(BaseHTTPRequestHandler):
         raw = json.dumps(obj, default=str).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", HUB_ORIGIN)
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)
@@ -436,7 +494,7 @@ class H(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", HUB_ORIGIN)
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
         self.end_headers()
@@ -446,6 +504,8 @@ class H(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         if path in ("/health", "/api/health") or path.endswith("/api/slack/events"):
             return self._json(200, {"ok": True, "bot": bool(BOT), "path": path})
+        if "/api/" in path and not require_session(self, admin=path.endswith(("/api/debug", "/api/backfill"))):
+            return
         if path.endswith("/api/debug"):
             cnt = 0
             err = None
@@ -573,7 +633,10 @@ class H(BaseHTTPRequestHandler):
             # Slack URL check must succeed even if signing secret not set yet
             if body.get("type") == "url_verification" or body.get("challenge"):
                 return self._json(200, {"challenge": body.get("challenge")})
-            if SIGN and not verify_slack(self.headers, raw):
+            if not SIGN:
+                print("SECURITY: SLACK_SIGNING_SECRET не задано — Slack events відхилено", flush=True)
+                return self._json(403, {"error": "slack events disabled: SLACK_SIGNING_SECRET not set"})
+            if not verify_slack(self.headers, raw):
                 return self._json(401, {"error": "bad slack signature"})
             ev = body.get("event") or {}
             if ev.get("type") in ("message", "app_mention") and not ev.get("subtype"):

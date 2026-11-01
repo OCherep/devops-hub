@@ -1,0 +1,66 @@
+# Official Business Accounts
+
+
+
+An Official Business Account (&quot;OBA&quot;) is a business phone number owned by a business that has been verified as an authentic business according to specific [criteria](#eligibility). Official Business Account business phone numbers have a blue checkmark beside their name in the contacts view.
+
+You can request OBA status for a business phone number using WhatsApp Manager or API. Once we&#039;ve reviewed your request, you will receive a notification letting you know if your business phone has been granted OBA Number status or not. If your request is rejected, you can submit a new request after 30 days.
+
+We do not grant OBA status to business employees, test accounts, and WhatsApp Business app phone numbers.
+
+## Eligibility
+
+To be eligible for OBA, the following criteria must be met:
+
+- The business must comply with the [WhatsApp Business Messaging Policy](https://business.whatsapp.com/policy).
+- The business must be registered on the WhatsApp Business Platform for at least 30 days.
+- The business portfolio that owns the number has been verified through [Business Verification](https://www.facebook.com/business/help/2058515294227817).
+- The business phone number has enabled [two-step verification](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/phone-numbers#two-step-verification).
+- The business phone number&#039;s display name has been [approved](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/phone-numbers#display-name-verification).
+
+If you meet the above criteria but do not see an option to apply for OBA in [WhatsApp Manager](http://business.facebook.com/wa/manage/), please reach out to your Meta point-of-contact, Solution Provider support, or Meta Support to check if you are eligible for the application process.
+
+**Note:** If a business phone number is not an Official Business Account (OBA), it will not appear in search results when users search for it within the WhatsApp application. However, if a user adds the number to their contacts, the display name will appear in their search results. For improved discoverability, we recommend applying for OBA status.
+
+## Denied requests
+
+If your request has been denied, it means our team has reviewed your account and determined that it does not meet the eligibility requirements at this time. You must wait 30 days before submitting another request.
+
+In the meantime, this decision does not limit your ability to share your business details. Each business phone number also has a business profile which includes the profile picture, email, website, and business description. These are fields that you can edit at any time.
+
+## Requesting OBA status via WhatsApp Manager
+
+- Access [**WhatsApp Manager**](https://business.facebook.com/latest/whatsapp_manager/) &gt; **Overview**, and click the business phone number:
+
+- Enable two-step verification if it isn&#039;t enabled already.
+
+- Click on the **Submit Request** button under **Phone numbers** &gt; **Profile** &gt; **Official business account**.
+
+## Getting OBA status via API
+
+Use the [Official Business Account Status API](https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/whatsapp-business-account-official-business-account-status-api#get-version-phone-number-id-official-business-account) to request the `official_business_account` field on your business phone number to get the status of an OBA request.
+
+### Example request
+
+```curl
+curl &#039;https://graph.facebook.com/v25.0/106540352242922?fields=official_business_account&#039; \
+-H &#039;Authorization: Bearer EAAJB...&#039;
+```
+
+### Example response
+
+Upon success:
+
+```json
+&#123;
+  &quot;official_business_account&quot;: &#123;
+    &quot;oba_status&quot;: &quot;NOT_STARTED&quot;
+  &#125;,
+  &quot;id&quot;: &quot;106540352242922&quot;
+&#125;
+```
+
+
+---
+
+Full documentation index for this product: https://developers.facebook.com/documentation/business-messaging/whatsapp/llms.txt

@@ -9,7 +9,9 @@ services:
         required: false
     environment:
       PORT: "8092"
-      DATABASE_URL: ${DATABASE_URL:-postgres://ops:ops-change-me@ops_postgres:5432/platform}
+      DATABASE_URL: ${DATABASE_URL:-}
+      ONCALL_API: ${ONCALL_API:-http://oncall_nginx_5}
+      HUB_ORIGIN: ${HUB_ORIGIN:-https://s.ks.tv}
       NETMAP_CIDRS: ${NETMAP_CIDRS:-}
       NETMAP_MAX_HOSTS: ${NETMAP_MAX_HOSTS:-256}
     volumes:

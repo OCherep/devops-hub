@@ -4,7 +4,8 @@
 
 | | |
 |---|---|
-| **Portal** | `index.html` + [`tools.json`](./tools.json) |
+| **Корінь** | `index.html` — поки що лише чіпи фахівців (`https://s.ks.tv`) |
+| **Основний портал** | [`shadow.html`](./shadow.html) — канонічна повна сторінка, далі робимо її (`https://s.ks.tv/shadow.html`) |
 | **Ops layout** | [`ops/`](./ops/) → `/opt/ops` на інстансі |
 | **OnCall** | окремо, **host port 85** (без змін) |
 | **Edge** | Caddy `:80/:443` → Hub + `/radar/` (strip) + `/ether/` (без strip, SSR) |
@@ -13,7 +14,8 @@
 
 ```bash
 python3 -m http.server 8080
-# http://localhost:8080
+# http://localhost:8080          — чіпи
+# http://localhost:8080/shadow.html — повний портал
 ```
 
 Або GitHub Pages / edge на EC2.
@@ -59,7 +61,8 @@ git clone https://github.com/OCherep/devops-hub.git /opt/ops/hub
 | OnCall System | [oncall-system](https://github.com/OCherep/oncall-system) | `https://s.ks.tv:85/` |
 | KSTV Tech Radar | [kstv-tech_radar](https://github.com/OCherep/kstv-tech_radar) | `https://s.ks.tv/radar/` |
 | Ефір | [ether](https://github.com/OCherep/ether/tree/grok-0.0.1) | `https://s.ks.tv/ether/` |
-| DevOps Hub | this | `https://s.ks.tv/` |
+| DevOps Hub (чіпи) | this | `https://s.ks.tv/` |
+| DevOps Hub (shadow) | this | `https://s.ks.tv/shadow.html` |
 
 ## Узгодження
 
